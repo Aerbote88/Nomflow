@@ -48,15 +48,7 @@ function StudyContent() {
     const customParams = searchParams.get('custom_params');
     const count = searchParams.get('count') || '5';
 
-    // Extract username synchronously from JWT cookie (lazy useState, runs once on client)
-    const [currentUser] = useState<string>(() => {
-        try {
-            const match = document.cookie.match(/access_token=Bearer%20([^;]+)/);
-            if (!match) return 'anon';
-            const payload = JSON.parse(atob(decodeURIComponent(match[1]).split('.')[1]));
-            return payload.sub || 'anon';
-        } catch { return 'anon'; }
-    });
+    const [currentUser] = useState<string>(() => localStorage.getItem('username') || 'anon');
 
     // Purge study sessions from other users on mount
     useEffect(() => {

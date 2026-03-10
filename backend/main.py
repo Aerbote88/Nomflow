@@ -74,15 +74,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 async def generic_exception_handler(request: Request, exc: Exception):
     import traceback
     traceback.print_exc()
-    
-    if request.url.path.startswith("/api/"):
-        return JSONResponse(
-            status_code=500,
-            content={"detail": f"Internal Server Error: {str(exc)}"},
-        )
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}"},
+        content={"detail": "Internal Server Error"},
     )
 
 # --- Auth Dependency ---
@@ -142,12 +136,11 @@ async def get_optional_user(request: Request, session: Session = Depends(get_ses
 
 # --- Auth Endpoints ---
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+class LoginResponse(BaseModel):
+    username: str
 
-@app.post("/api/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+@app.post("/api/token", response_model=LoginResponse)
+async def login_for_access_token(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.username == form_data.username)).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
@@ -155,17 +148,26 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token_expires = timedelta(minutes=60 * 24 * 7) # 1 week
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=60 * 60 * 24 * 7,
+        path="/",
+    )
+    return {"username": user.username}
 
 @app.get("/api/logout")
-def logout(response: Response):
+def logout():
     response = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="access_token", path="/", httponly=True, secure=True, samesite="lax")
     return response
 
 class RegisterRequest(BaseModel):

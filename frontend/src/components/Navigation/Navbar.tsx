@@ -11,22 +11,10 @@ export function Navbar() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState<string | null>(null);
 
-    // Simple check for cookie on client side
     useEffect(() => {
-        const loggedIn = document.cookie.includes('access_token=');
-        setIsLoggedIn(loggedIn);
-        if (loggedIn) {
-            try {
-                const match = document.cookie.match(/access_token=([^;]+)/);
-                if (match) {
-                    const raw = decodeURIComponent(match[1]).replace(/^Bearer\s+/, '');
-                    const payload = JSON.parse(atob(raw.split('.')[1]));
-                    setCurrentUser(payload.sub || null);
-                }
-            } catch { setCurrentUser(null); }
-        } else {
-            setCurrentUser(null);
-        }
+        const username = localStorage.getItem('username');
+        setIsLoggedIn(!!username);
+        setCurrentUser(username);
     }, [pathname]);
 
     const handleLogout = () => {
@@ -34,9 +22,8 @@ export function Navbar() {
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('study_session_')) localStorage.removeItem(key);
         });
-        document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
-        setIsLoggedIn(false);
-        window.location.href = '/login';
+        localStorage.removeItem('username');
+        window.location.href = '/api/logout';
     };
 
     if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password') return null;
@@ -57,23 +44,23 @@ export function Navbar() {
             <div className="flex items-center gap-4 md:gap-8">
                 {isLoggedIn ? (
                     <>
-                        <Link href="/dashboard" className={`text-[10px] font-black uppercase tracking-widest transition-colors ${pathname === '/dashboard' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
+                        <Link href="/dashboard" className={`text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/dashboard' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
                             Dashboard
                         </Link>
-                        <Link href="/library" className={`text-[10px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith('/library') ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
+                        <Link href="/library" className={`text-[11px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith('/library') ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
                             Library
                         </Link>
-                        <Link href="/vocab" className={`hidden md:block text-[10px] font-black uppercase tracking-widest transition-colors ${pathname === '/vocab' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
+                        <Link href="/vocab" className={`hidden md:block text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/vocab' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
                             Flashcards
                         </Link>
-                        <Link href="/leaderboard" className={`hidden md:block text-[10px] font-black uppercase tracking-widest transition-colors ${pathname === '/leaderboard' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
+                        <Link href="/leaderboard" className={`hidden md:block text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/leaderboard' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
                             Leaderboard
                         </Link>
-                        <Link href="/settings" className={`hidden md:block text-[10px] font-black uppercase tracking-widest transition-colors ${pathname === '/settings' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
+                        <Link href="/settings" className={`hidden md:block text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/settings' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
                             Settings
                         </Link>
 {currentUser && (
-                            <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-50">
+                            <span className="text-[11px] font-black uppercase tracking-widest text-text-secondary opacity-50">
                                 {currentUser}
                             </span>
                         )}
@@ -81,13 +68,13 @@ export function Navbar() {
                             variant="ghost"
                             size="sm"
                             onClick={handleLogout}
-                            className="text-[10px] font-black text-red-500/60 hover:text-red-500 hover:bg-red-500/10 uppercase tracking-[0.2em]"
+                            className="text-[11px] font-black text-red-500/60 hover:text-red-500 hover:bg-red-500/10 uppercase tracking-[0.2em]"
                         >
                             Sign Out
                         </Button>
                     </>
                 ) : (
-                    <Link href="/login" className="text-[10px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors">
+                    <Link href="/login" className="text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors">
                         Sign In
                     </Link>
                 )}

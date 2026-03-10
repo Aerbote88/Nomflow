@@ -50,7 +50,7 @@ export default function RegisterPage() {
 
                 if (loginRes.ok) {
                     const data = await loginRes.json();
-                    document.cookie = `access_token=Bearer ${data.access_token}; path=/; max-age=604800; SameSite=Lax`;
+                    localStorage.setItem('username', data.username);
                     window.location.href = '/dashboard';
                 } else {
                     router.push('/login?registered=true');

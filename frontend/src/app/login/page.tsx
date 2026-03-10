@@ -32,9 +32,7 @@ export default function LoginPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                // Set Cookie - Bearer prefix is used in the backend
-                // Using SameSite=Lax for compatibility
-                document.cookie = `access_token=Bearer ${data.access_token}; path=/; max-age=604800; SameSite=Lax`;
+                localStorage.setItem('username', data.username);
                 window.location.href = '/dashboard';
             } else {
                 const data = await res.json();

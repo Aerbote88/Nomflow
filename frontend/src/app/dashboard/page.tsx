@@ -32,7 +32,7 @@ export default function DashboardPage() {
     const [isOnboarding, setIsOnboarding] = useState(false);
 
     useEffect(() => {
-        if (!document.cookie.includes('access_token=')) {
+        if (!localStorage.getItem('username')) {
             window.location.href = '/login';
             return;
         }
