@@ -79,9 +79,9 @@ export default function DashboardPage() {
 
             {/* Stats Grid */}
             <div className="w-full max-w-4xl space-y-4 md:space-y-6">
-                <div className="grid grid-cols-4 gap-3 md:flex md:flex-wrap md:justify-center">
+                <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-3">
                     {/* Level Card */}
-                    <GlassCard className="col-span-4 md:flex-[2] md:min-w-[320px] !p-6 md:!p-8 border-accent-primary items-stretch">
+                    <GlassCard className="col-span-2 md:flex-[2] md:min-w-[320px] !p-6 md:!p-8 border-accent-primary items-stretch">
                         <div className="flex justify-between items-end mb-4">
                             <div className="flex flex-col">
                                 <span className="text-xs md:text-sm text-text-secondary uppercase tracking-widest font-bold">Level</span>
@@ -111,7 +111,7 @@ export default function DashboardPage() {
                     <StatCard label="Learned" value={stats.learned_count} colorClass="text-emerald-500" />
 
                     {/* Active Source Card */}
-                    <GlassCard className="col-span-4 md:flex-1 md:min-w-[240px] flex flex-col items-center justify-center !p-6">
+                    <GlassCard className="col-span-2 md:flex-1 md:min-w-[240px] flex flex-col items-center justify-center !p-6">
                         <span className="text-xs md:text-sm text-text-secondary uppercase tracking-widest font-bold mb-2">Studying</span>
                         <div className="text-2xl md:text-3xl font-bold text-text-primary text-center font-serif leading-tight">
                             {stats.active_source_name || "None"}
