@@ -47,8 +47,19 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(lifespan=lifespan)
+
+# CORS — allow requests from the frontend
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[frontend_url],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Enable GZIP compression for all responses > 1000 bytes (Huge performance boost for JSON arrays)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
