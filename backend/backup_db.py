@@ -1,52 +1,87 @@
 import os
-import shutil
+import json
+import base64
+import resend
 from datetime import datetime
-import glob
+from sqlmodel import Session, select
+from .database import engine
+from .models import (
+    User, Line, SourceText, UserProgress, UserSettings,
+    StudyList, StudyListItem, LeaderboardEntry, ChallengeSession,
+    XpLog, Character, Expression, ExpressionCharacter, Feedback
+)
 
-# Configuration
-DB_PATH = os.path.join(os.path.dirname(__file__), 'learning.db')
-BACKUP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'backups')
-MAX_BACKUPS = 7
+BACKUP_EMAIL = os.getenv("BACKUP_EMAIL")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "backup@nomflow.app")
+
+TABLES = [
+    ("users", User),
+    ("lines", Line),
+    ("source_texts", SourceText),
+    ("user_progress", UserProgress),
+    ("user_settings", UserSettings),
+    ("study_lists", StudyList),
+    ("study_list_items", StudyListItem),
+    ("leaderboard_entries", LeaderboardEntry),
+    ("challenge_sessions", ChallengeSession),
+    ("xp_logs", XpLog),
+    ("characters", Character),
+    ("expressions", Expression),
+    ("expression_characters", ExpressionCharacter),
+    ("feedback", Feedback),
+]
+
+
+def serialize(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
 
 def perform_backup():
-    """Creates a timestamped backup of the learning database."""
-    if not os.path.exists(DB_PATH):
-        print(f"Error: Database not found at {DB_PATH}")
+    if not BACKUP_EMAIL:
+        print("Backup skipped: BACKUP_EMAIL not set")
+        return
+    if not RESEND_API_KEY:
+        print("Backup skipped: RESEND_API_KEY not set")
         return
 
-    # Ensure backup directory exists
-    if not os.path.exists(BACKUP_DIR):
-        os.makedirs(BACKUP_DIR)
-        print(f"Created backup directory at {BACKUP_DIR}")
+    print(f"Starting Postgres backup: {datetime.now()}")
+    backup = {}
 
-    # Create timestamped filename
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_filename = f"learning_backup_{timestamp}.db"
-    backup_path = os.path.join(BACKUP_DIR, backup_filename)
-
-    # Perform the copy
     try:
-        shutil.copy2(DB_PATH, backup_path)
-        print(f"Successfully backed up database to: {backup_filename}")
+        with Session(engine) as session:
+            for table_name, model in TABLES:
+                try:
+                    rows = session.exec(select(model)).all()
+                    backup[table_name] = [row.model_dump() for row in rows]
+                    print(f"  {table_name}: {len(rows)} rows")
+                except Exception as e:
+                    print(f"  {table_name}: failed ({e})")
+                    backup[table_name] = []
     except Exception as e:
-        print(f"Failed to backup database: {e}")
+        print(f"Backup failed during DB export: {e}")
         return
 
-    # Clean up old backups (keep only the 'MAX_BACKUPS' most recent files)
-    all_backups = glob.glob(os.path.join(BACKUP_DIR, "learning_backup_*.db"))
-    # Sort by modification time, oldest first
-    all_backups.sort(key=os.path.getmtime)
-    
-    if len(all_backups) > MAX_BACKUPS:
-        backups_to_delete = all_backups[:-MAX_BACKUPS]
-        for old_backup in backups_to_delete:
-            try:
-                os.remove(old_backup)
-                print(f"Deleted old backup: {os.path.basename(old_backup)}")
-            except Exception as e:
-                print(f"Failed to delete old backup {old_backup}: {e}")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"nomflow_backup_{timestamp}.json"
+    content = json.dumps(backup, default=serialize, indent=2)
+    encoded = base64.b64encode(content.encode()).decode()
+
+    try:
+        resend.api_key = RESEND_API_KEY
+        resend.Emails.send({
+            "from": RESEND_FROM_EMAIL,
+            "to": BACKUP_EMAIL,
+            "subject": f"NômFlow DB Backup — {timestamp}",
+            "html": f"<p>Automated daily backup attached.</p><p>Tables: {', '.join(backup.keys())}</p>",
+            "attachments": [{"filename": filename, "content": encoded}],
+        })
+        print(f"Backup emailed to {BACKUP_EMAIL}")
+    except Exception as e:
+        print(f"Backup email failed: {e}")
+
 
 if __name__ == "__main__":
-    print(f"--- Starting Database Backup: {datetime.now()} ---")
     perform_backup()
-    print("--- Backup Finished ---\n")
