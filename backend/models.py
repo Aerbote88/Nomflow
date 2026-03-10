@@ -121,7 +121,7 @@ class UserProgress(SQLModel, table=True):
 class StudyList(SQLModel, table=True):
     __tablename__ = "studylist"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: int = Field(foreign_key="user.id", index=True)
     name: str
     description: Optional[str] = None
 
@@ -131,7 +131,7 @@ class StudyList(SQLModel, table=True):
 class StudyListItem(SQLModel, table=True):
     __tablename__ = "studylistitem"
     id: Optional[int] = Field(default=None, primary_key=True)
-    study_list_id: int = Field(foreign_key="studylist.id")
+    study_list_id: int = Field(foreign_key="studylist.id", index=True)
     item_type: str # "line" or "character"
     item_id: int
 
@@ -161,10 +161,10 @@ class UserSettings(SQLModel, table=True):
 class LeaderboardEntry(SQLModel, table=True):
     __tablename__ = "leaderboardentry"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
-    text_id: Optional[int] = Field(default=None, foreign_key="sourcetext.id")
-    list_id: Optional[int] = Field(default=None, foreign_key="studylist.id")
-    mode: str = Field(default="sudden_death") # "normal" or "sudden_death"
+    user_id: int = Field(foreign_key="user.id", index=True)
+    text_id: Optional[int] = Field(default=None, foreign_key="sourcetext.id", index=True)
+    list_id: Optional[int] = Field(default=None, foreign_key="studylist.id", index=True)
+    mode: str = Field(default="sudden_death", index=True) # "normal" or "sudden_death"
     score: int
     achieved_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -174,10 +174,10 @@ class LeaderboardEntry(SQLModel, table=True):
 class ChallengeSession(SQLModel, table=True):
     __tablename__ = "challengesession"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
-    text_id: Optional[int] = Field(default=None, foreign_key="sourcetext.id")
-    list_id: Optional[int] = Field(default=None, foreign_key="studylist.id")
-    mode: str = Field(default="sudden_death") # "normal" or "sudden_death"
+    user_id: int = Field(foreign_key="user.id", index=True)
+    text_id: Optional[int] = Field(default=None, foreign_key="sourcetext.id", index=True)
+    list_id: Optional[int] = Field(default=None, foreign_key="studylist.id", index=True)
+    mode: str = Field(default="sudden_death", index=True) # "normal" or "sudden_death"
     current_index: int = 0
     last_updated: datetime = Field(default_factory=datetime.utcnow)
 
