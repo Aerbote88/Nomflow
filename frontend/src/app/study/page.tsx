@@ -330,7 +330,7 @@ function StudyContent() {
         : `Remaining: ${queue.length + 1}`;
 
     return (
-        <div className="flex flex-col items-center py-4 md:py-8">
+        <div className="flex flex-col items-center py-2 md:py-8">
             <StudyHeader
                 mode={mode}
                 progress={progressText}

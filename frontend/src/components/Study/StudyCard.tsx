@@ -29,10 +29,10 @@ export const StudyCard: React.FC<StudyCardProps> = ({
         : `/dictionary/line/${contentId}`;
 
     return (
-        <GlassCard className="w-full max-w-[600px] min-h-[450px] flex flex-col justify-center items-center relative overflow-hidden group transition-[background-color,border-color,box-shadow,transform,opacity] duration-500">
-            <div className="w-full text-center z-10 p-8">
+        <GlassCard className="w-full max-w-[600px] min-h-[320px] md:min-h-[450px] flex flex-col justify-center items-center relative overflow-hidden group transition-[background-color,border-color,box-shadow,transform,opacity] duration-500">
+            <div className="w-full text-center z-10 p-4 md:p-8">
                 {/* Front and Back Container (Stabilized) */}
-                <div className="flex flex-col items-center justify-center min-h-[300px]">
+                <div className="flex flex-col items-center justify-center min-h-[180px] md:min-h-[300px]">
                     <a
                         href={dictionaryUrl}
                         className="font-nom text-text-primary leading-tight hover:text-accent-primary transition-colors cursor-pointer"
@@ -55,7 +55,7 @@ export const StudyCard: React.FC<StudyCardProps> = ({
                 </div>
 
                 {/* Back of Card (Fades in without shifting layout) */}
-                <div className={`mt-8 pt-8 border-t border-white/10 w-full overflow-hidden transition-all duration-700 ease-out ${isFlipped ? 'opacity-100 translate-y-0 scale-100 h-auto' : 'opacity-0 translate-y-4 scale-95 h-0 pointer-events-none'}`}>
+                <div className={`mt-4 pt-4 md:mt-8 md:pt-8 border-t border-white/10 w-full overflow-hidden transition-all duration-700 ease-out ${isFlipped ? 'opacity-100 translate-y-0 scale-100 h-auto' : 'opacity-0 translate-y-4 scale-95 h-0 pointer-events-none'}`}>
                     <div className="text-3xl md:text-4xl font-serif font-semibold text-accent-primary mb-2">
                         {quocNgu}
                     </div>
