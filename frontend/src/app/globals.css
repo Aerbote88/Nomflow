@@ -1,0 +1,155 @@
+@font-face {
+  font-family: 'NomNaTong';
+  src: url('/fonts/NomNaTong-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+
+@theme {
+  --color-accent-primary: #c8922a;
+  --color-accent-hover: #a5701c;
+  --color-accent-gold: #ffad1d;
+  --color-accent-gold-bright: #ffd580;
+  --color-bg-primary: #09090b;
+  --color-bg-secondary: #27272a;
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-lora), ui-serif, Georgia, serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-nom: "NomNaTong", "Han Nom A", "Han Nom B", "Noto Serif TC", "Noto Serif SC", "SimSun", "MingLiU", serif;
+}
+
+:root {
+  --bg-primary: #09090b;
+  --bg-secondary: #27272a;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --accent-primary: #c8922a;
+  --accent-hover: #a5701c;
+  --accent-gold: #ffad1d;
+  --accent-gold-bright: #ffd580;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+.nom-text,
+.font-nom {
+  font-family: var(--font-nom);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+#app-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(ellipse at top, rgba(200, 146, 42, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at bottom, rgba(0, 25, 110, 0.08) 0%, transparent 60%);
+  background-color: #09090b;
+  pointer-events: none;
+}
+
+#page-scroller {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.main-wrapper {
+  flex: 1 0 auto;
+}
+
+.glass-card {
+  background: rgba(30, 30, 34, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(200, 146, 42, 0.2);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  /* Only animate colors and glows, not height/width */
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.4s ease;
+}
+
+.glass-card:hover {
+  background: rgba(35, 35, 40, 0.9);
+  border-color: rgba(200, 146, 42, 0.4);
+}
+
+
+.current-char-highlight {
+  color: var(--accent-gold);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  font-weight: bold;
+}
+
+button,
+a,
+[role="button"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+button:disabled,
+[disabled] {
+  cursor: not-allowed;
+}
+
+@keyframes fade-in-opacity {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in-stable {
+  animation: fade-in-opacity 0.5s ease-out forwards;
+}
+
+/* Utility for layout-safe transitions */
+.transition-stable {
+  transition-property: background-color, border-color, color, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}

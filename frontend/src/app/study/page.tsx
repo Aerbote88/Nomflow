@@ -1,0 +1,409 @@
+'use client';
+
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
+import { StudyHeader } from '@/components/Study/StudyHeader';
+import { StudyCard } from '@/components/Study/StudyCard';
+import { ReviewControls } from '@/components/Study/ReviewControls';
+import { CompletionScreen } from '@/components/Study/CompletionScreen';
+import { AddToListModal } from '@/components/Study/AddToListModal';
+
+interface StudyItem {
+    user_progress_id: number;
+    item_type: 'character' | 'line';
+    content_id: number;
+    nom: string;
+    quoc_ngu: string;
+    english?: string;
+    context_line?: string;
+    source_title?: string;
+    line_number?: number;
+    is_new?: boolean;
+    is_practice?: boolean;
+    intervals?: { [key: number]: string };
+    session_stats?: { due: number };
+}
+
+function StudyContent() {
+    const searchParams = useSearchParams();
+    const [queue, setQueue] = useState<StudyItem[]>([]);
+    const [currentItem, setCurrentItem] = useState<StudyItem | null>(null);
+    const [isFlipped, setIsFlipped] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [completed, setCompleted] = useState(false);
+    const [stats, setStats] = useState({ due: 0, studied: 0 });
+    const [isFetching, setIsFetching] = useState(false);
+    const isFetchingRef = useRef(false);
+    const [canUndo, setCanUndo] = useState(false);
+    const [isAddToListOpen, setIsAddToListOpen] = useState(false);
+    const [lastReviewedItem, setLastReviewedItem] = useState<StudyItem | null>(null);
+    const [lastReviewedQuality, setLastReviewedQuality] = useState<number | null>(null);
+    const isProcessingNext = useRef(false);
+    const reviewedInSession = useRef<Set<string>>(new Set());
+
+    const mode = searchParams.get('mode') || 'srs';
+    const listId = searchParams.get('list_id');
+    const textId = searchParams.get('text_id');
+    const customParams = searchParams.get('custom_params');
+    const count = searchParams.get('count') || '5';
+
+    // Extract username synchronously from JWT cookie (lazy useState, runs once on client)
+    const [currentUser] = useState<string>(() => {
+        try {
+            const match = document.cookie.match(/access_token=Bearer%20([^;]+)/);
+            if (!match) return 'anon';
+            const payload = JSON.parse(atob(decodeURIComponent(match[1]).split('.')[1]));
+            return payload.sub || 'anon';
+        } catch { return 'anon'; }
+    });
+
+    // Purge study sessions from other users on mount
+    useEffect(() => {
+        const prefix = `study_session_${currentUser}_`;
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('study_session_') && !key.startsWith(prefix)) {
+                localStorage.removeItem(key);
+            }
+        });
+    }, [currentUser]);
+
+    // Generate a unique session key scoped to the current user
+    const sessionKey = `study_session_${currentUser}_${mode}_${listId || 'none'}_${textId || 'none'}_${customParams || 'none'}`;
+
+    // Use refs to track latest state for fetchItems without triggering it as a dependency
+    const queueRef = useRef<StudyItem[]>([]);
+    const currentItemRef = useRef<StudyItem | null>(null);
+
+    useEffect(() => {
+        queueRef.current = queue;
+    }, [queue]);
+
+    useEffect(() => {
+        currentItemRef.current = currentItem;
+    }, [currentItem]);
+
+    const fetchItems = useCallback(async (silent = false) => {
+        if (isFetchingRef.current) return;
+        isFetchingRef.current = true;
+        setIsFetching(true);
+        if (!silent) setLoading(true);
+
+        try {
+            const params = new URLSearchParams();
+            params.append('mode', mode);
+            params.append('count', mode === 'random' ? (count || '20') : count);
+            if (listId) params.append('list_id', listId);
+            if (textId) params.append('text_id', textId);
+            if (customParams) params.append('custom_params', customParams);
+
+            // Pass currently in-flight items + session-reviewed items to prevent repeats
+            const inFlight = [currentItemRef.current, ...queueRef.current]
+                .filter((item): item is StudyItem => !!item)
+                .map(item => `${item.item_type}:${item.content_id}`);
+
+            const sessionSeen = mode === 'srs'
+                ? [...new Set([...reviewedInSession.current, ...inFlight])]
+                : inFlight;
+
+            if (sessionSeen.length > 0) {
+                params.append('seen', sessionSeen.join(','));
+            }
+
+            console.log(`[Study Debug] Fetching items. In-flight IDs:`, inFlight);
+
+            const data = await apiFetch<any>(`study/next?${params.toString()}`);
+            console.log(`[Study Debug] Received data:`, data);
+
+            if (data.status === 'done') {
+                if (queueRef.current.length === 0 && !currentItemRef.current) {
+                    setCompleted(true);
+                }
+            } else {
+                const newItems = Array.isArray(data) ? data : [data];
+
+                // Client-side guard against duplicates already in queue
+                const currentIds = new Set([currentItemRef.current, ...queueRef.current]
+                    .filter(Boolean)
+                    .map(i => `${i!.item_type}:${i!.content_id}`));
+
+                const uniqueNewItems = newItems.filter(item =>
+                    !currentIds.has(`${item.item_type}:${item.content_id}`)
+                );
+
+                if (uniqueNewItems.length > 0) {
+                    console.log(`[Study Debug] Appending ${uniqueNewItems.length} unique items to queue`);
+                    setQueue(prev => [...prev, ...uniqueNewItems]);
+                    if (uniqueNewItems[0]?.session_stats) {
+                        setStats(prev => ({ ...prev, due: uniqueNewItems[0].session_stats.due }));
+                    }
+                } else {
+                    console.log(`[Study Debug] No new unique items to add`);
+                }
+            }
+        } catch (err) {
+            console.error('Fetch study items failed:', err);
+        } finally {
+            isFetchingRef.current = false;
+            setIsFetching(false);
+            setLoading(false);
+        }
+    }, [mode, listId, textId, customParams, count]); // isFetching handled via ref to avoid recreation
+
+    // Save session state to localStorage whenever it changes (SRS only)
+    useEffect(() => {
+        if (mode === 'random') return;
+        if (currentItem || queue.length > 0) {
+            const sessionState = {
+                queue,
+                currentItem,
+                stats,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(sessionKey, JSON.stringify(sessionState));
+        }
+    }, [queue, currentItem, stats, sessionKey, mode]);
+
+    // Restore session state from localStorage on mount (SRS only)
+    useEffect(() => {
+        if (mode === 'random') {
+            localStorage.removeItem(sessionKey); // clear any stale random session
+            fetchItems();
+            return;
+        }
+        const savedSession = localStorage.getItem(sessionKey);
+        if (savedSession) {
+            try {
+                const sessionState = JSON.parse(savedSession);
+                // Only restore if session is less than 1 hour old
+                const oneHour = 60 * 60 * 1000;
+                if (Date.now() - sessionState.timestamp < oneHour) {
+                    setQueue(sessionState.queue || []);
+                    setCurrentItem(sessionState.currentItem || null);
+                    setStats({ due: 0, studied: sessionState.stats?.studied || 0 });
+                    setLoading(false);
+                    // Fetch fresh due count — don't trust stale localStorage value
+                    apiFetch<{ due_count: number }>('dashboard/stats')
+                        .then(data => setStats(prev => ({ ...prev, due: data.due_count })))
+                        .catch(() => {});
+                    console.log('[Study] Restored session from localStorage');
+                    return;
+                }
+            } catch (err) {
+                console.error('[Study] Failed to restore session:', err);
+            }
+        }
+        // If no valid saved session, fetch new items
+        fetchItems();
+    }, [sessionKey, fetchItems, mode]);
+
+
+    useEffect(() => {
+        if (!loading && !currentItem && queue.length > 0) {
+            nextItem();
+        }
+    }, [loading, currentItem]);
+
+    const nextItem = () => {
+        if (isProcessingNext.current) {
+            console.log('[Study] Skipping nextItem - already processing');
+            return;
+        }
+
+        isProcessingNext.current = true;
+
+        if (queue.length === 0) {
+            // Clear session and currentItem so completion check can trigger.
+            // Eagerly clear the ref so fetchItems sees null immediately (setState is async).
+            localStorage.removeItem(sessionKey);
+            currentItemRef.current = null;
+            setCurrentItem(null);
+            fetchItems();
+            isProcessingNext.current = false;
+            return;
+        }
+        const next = queue[0];
+        console.log(`[Study Debug] Advancing to next item:`, `${next.item_type}:${next.content_id}`);
+        setQueue(prev => prev.slice(1));
+        setCurrentItem(next);
+        setIsFlipped(false);
+
+        // Pre-fetch if queue is low (not for random mode — we have a fixed set)
+        if (mode !== 'random' && queue.length < 3) {
+            console.log(`[Study Debug] Queue low (${queue.length - 1} remaining), pre-fetching...`);
+            fetchItems(true);
+        }
+
+        // Reset the flag after state updates are queued
+        isProcessingNext.current = false;
+    };
+
+    const handlesubmitReview = (quality: number) => {
+        if (!currentItem) return;
+
+        const reviewedItem = currentItem;
+        setLastReviewedItem(reviewedItem);
+        setLastReviewedQuality(quality);
+        reviewedInSession.current.add(`${reviewedItem.item_type}:${reviewedItem.content_id}`);
+        setStats(prev => ({ ...prev, studied: prev.studied + 1, due: Math.max(0, prev.due - 1) }));
+
+        // Check for stale session before advancing
+        if (!reviewedItem.is_practice && mode !== 'random' && !reviewedItem.user_progress_id) {
+            console.warn('[Study] Stale session - clearing and restarting');
+            localStorage.removeItem(sessionKey);
+            setQueue([]);
+            setCurrentItem(null);
+            fetchItems();
+            return;
+        }
+
+        // Advance immediately — don't wait for the API
+        nextItem();
+
+        // Fire review in the background
+        if (!reviewedItem.is_practice && mode !== 'random') {
+            apiFetch('study/review', {
+                method: 'POST',
+                body: JSON.stringify({
+                    item_id: reviewedItem.user_progress_id,
+                    quality,
+                }),
+            }).then(() => {
+                setCanUndo(true);
+            }).catch(err => {
+                console.error('Review failed:', err);
+                if (err instanceof Error && err.message === 'Item not found') {
+                    console.warn('[Study] Stale session detected - clearing and restarting');
+                    localStorage.removeItem(sessionKey);
+                    setQueue([]);
+                    setCurrentItem(null);
+                    fetchItems();
+                }
+            });
+        }
+    };
+
+    const handleUndo = async () => {
+        if (!lastReviewedItem) return;
+
+        try {
+            await apiFetch('study/undo', { method: 'POST' });
+
+            // Just restore the item as current, don't add to queue
+            setCurrentItem(lastReviewedItem);
+            setIsFlipped(false);
+            setCanUndo(false);
+            setLastReviewedItem(null);
+
+            // Update stats
+            setStats(prev => ({
+                ...prev,
+                studied: Math.max(0, prev.studied - 1),
+                due: lastReviewedQuality !== null && lastReviewedQuality > 0 ? prev.due + 1 : prev.due
+            }));
+        } catch (err) {
+            console.error('Undo failed:', err);
+        }
+    };
+
+    if (loading && queue.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin mb-4" />
+                    <p className="text-text-secondary font-black uppercase tracking-widest text-xs">Loading study items...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (completed) {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center">
+                <CompletionScreen isSRS={mode === 'srs'} />
+            </div>
+        );
+    }
+
+    if (!currentItem) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-16 h-16 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin mb-4" />
+            </div>
+        );
+    }
+
+    const progressText = mode === 'srs'
+        ? `Due: ${stats.due}`
+        : `Remaining: ${queue.length + 1}`;
+
+    return (
+        <div className="flex flex-col items-center py-4 md:py-8">
+            <StudyHeader
+                mode={mode}
+                progress={progressText}
+                title={currentItem.source_title}
+            />
+
+            <StudyCard
+                nom={currentItem.nom}
+                contextLine={currentItem.context_line}
+                quocNgu={currentItem.quoc_ngu}
+                english={currentItem.english}
+                sourceTitle={currentItem.source_title}
+                lineNumber={currentItem.line_number}
+                itemType={currentItem.item_type}
+                isFlipped={isFlipped}
+                contentId={currentItem.content_id}
+            />
+
+            <ReviewControls
+                isFlipped={isFlipped}
+                onShow={() => setIsFlipped(true)}
+                onSubmit={handlesubmitReview}
+                intervals={currentItem.intervals}
+                isPractice={mode === 'random'}
+            />
+
+            <div className="flex gap-3 mt-6 w-full max-w-[600px]">
+                <button
+                    onClick={handleUndo}
+                    disabled={!canUndo}
+                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
+                >
+                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
+                </button>
+                <button
+                    onClick={() => setIsAddToListOpen(true)}
+                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
+                >
+                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
+                </button>
+            </div>
+
+            <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
+                Your Progress is Automatically Saved
+            </div>
+
+            <AddToListModal
+                isOpen={isAddToListOpen}
+                onClose={() => setIsAddToListOpen(false)}
+                itemId={currentItem.content_id}
+                itemType={currentItem.item_type}
+                itemName={currentItem.nom.replace(/<[^>]*>/g, '')}
+            />
+        </div>
+    );
+}
+
+export default function StudyPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-16 h-16 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin mb-4" />
+            </div>
+        }>
+            <StudyContent />
+        </Suspense>
+    );
+}

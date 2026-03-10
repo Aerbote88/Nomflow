@@ -1,0 +1,33 @@
+# Claude Code
+.claude/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+venv/
+.venv/
+
+# Next.js
+frontend/.next/
+frontend/node_modules/
+frontend/.env.local
+
+# Misc
+notes.md
+backups/
+debug_counts.log
+migration_v5.log
+backend/static/text files/kieu_reference_clean.txt
+backend/static/text files/duplicate_audit_results.txt
+backend/static/text files/audit_results.txt
+backend/static/text files/alignment_audit.txt
+backend/static/text files/nom_data_backup.json
