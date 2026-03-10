@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -9,12 +10,12 @@ from .models import User
 from .main import get_session # Circular import? Avoid. Pass session to dep.
 # Actually main probably imports auth. Need to be careful.
 # Usually session dependency is defined in a shared valid module or locally.
-# Let's redefine get_session or import from database module? 
-# Currently everything is in main.py. I should probably move database init to database.py 
+# Let's redefine get_session or import from database module?
+# Currently everything is in main.py. I should probably move database init to database.py
 # but for now I will duplicate or just pass session.
 
 # Logic configuration
-SECRET_KEY = "CHANGE_THIS_TO_A_SECURE_RANDOM_STRING_IN_PROD"
+SECRET_KEY = os.environ["SECRET_KEY"]
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30000 # Long expiry for demo
 
