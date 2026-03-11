@@ -22,9 +22,13 @@ export const StudyHeader: React.FC<StudyHeaderProps> = ({ mode, progress, title 
                 </Link>
                 <div className="flex flex-col">
                     <span className="text-[10px] font-black text-accent-primary uppercase tracking-[0.2em] leading-none mb-0.5">
-                        {mode === 'srs' ? 'SRS Review' : mode === 'random' ? 'Random' : 'Custom Study'}
+                        {mode === 'srs' 
+                            ? (title && title !== "Study Session" ? `SRS: ${title}` : 'SRS Review') 
+                            : mode === 'random' 
+                                ? (title && title !== "Study Session" ? `Random: ${title}` : 'Random')
+                                : 'Custom Study'}
                     </span>
-                    <span className="text-xs font-bold text-text-primary uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                    <span className="text-xs font-bold text-text-primary uppercase tracking-widest">
                         {progress}
                     </span>
                 </div>
@@ -36,7 +40,6 @@ export const StudyHeader: React.FC<StudyHeaderProps> = ({ mode, progress, title 
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                         Progress Saved
                     </span>
-                    {title && <span className="text-[9px] text-text-secondary uppercase tracking-tight opacity-50 truncate max-w-[120px]">{title}</span>}
                 </div>
             </div>
         </div>

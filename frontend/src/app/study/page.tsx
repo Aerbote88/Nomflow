@@ -41,6 +41,7 @@ function StudyContent() {
     const [lastReviewedQuality, setLastReviewedQuality] = useState<number | null>(null);
     const isProcessingNext = useRef(false);
     const reviewedInSession = useRef<Set<string>>(new Set());
+    const noMoreRemaining = useRef(false);
 
     const mode = searchParams.get('mode') || 'srs';
     const listId = searchParams.get('list_id');
@@ -111,11 +112,18 @@ function StudyContent() {
             console.log(`[Study Debug] Received data:`, data);
 
             if (data.status === 'done') {
+                noMoreRemaining.current = true;
                 if (queueRef.current.length === 0 && !currentItemRef.current) {
                     setCompleted(true);
                 }
             } else {
+                noMoreRemaining.current = false;
                 const newItems = Array.isArray(data) ? data : [data];
+
+                // If in random mode, we treat the first fetch as the complete session
+                if (mode === 'random') {
+                    noMoreRemaining.current = true;
+                }
 
                 // Client-side guard against duplicates already in queue
                 const currentIds = new Set([currentItemRef.current, ...queueRef.current]
@@ -129,6 +137,7 @@ function StudyContent() {
                 if (uniqueNewItems.length > 0) {
                     console.log(`[Study Debug] Appending ${uniqueNewItems.length} unique items to queue`);
                     setQueue(prev => [...prev, ...uniqueNewItems]);
+                    queueRef.current = [...queueRef.current, ...uniqueNewItems];
                     if (uniqueNewItems[0]?.session_stats) {
                         setStats(prev => ({ ...prev, due: uniqueNewItems[0].session_stats.due }));
                     }
@@ -138,6 +147,11 @@ function StudyContent() {
             }
         } catch (err) {
             console.error('Fetch study items failed:', err);
+            // If it's the initial load and it fails, it might be an empty source 
+            // or a backend error. Default to completion screen as requested.
+            if (queueRef.current.length === 0 && !currentItemRef.current) {
+                setCompleted(true);
+            }
         } finally {
             isFetchingRef.current = false;
             setIsFetching(false);
@@ -178,7 +192,10 @@ function StudyContent() {
                     setStats({ due: 0, studied: sessionState.stats?.studied || 0 });
                     setLoading(false);
                     // Fetch fresh due count — don't trust stale localStorage value
-                    apiFetch<{ due_count: number }>('dashboard/stats')
+                    const statsParams = new URLSearchParams();
+                    if (textId) statsParams.append('text_id', textId);
+                    if (listId) statsParams.append('list_id', listId);
+                    apiFetch<{ due_count: number }>(`dashboard/stats?${statsParams.toString()}`)
                         .then(data => setStats(prev => ({ ...prev, due: data.due_count })))
                         .catch(() => {});
                     console.log('[Study] Restored session from localStorage');
@@ -207,25 +224,31 @@ function StudyContent() {
 
         isProcessingNext.current = true;
 
-        if (queue.length === 0) {
+        if (queueRef.current.length === 0) {
             // Clear session and currentItem so completion check can trigger.
             // Eagerly clear the ref so fetchItems sees null immediately (setState is async).
-            localStorage.removeItem(sessionKey);
-            currentItemRef.current = null;
-            setCurrentItem(null);
-            fetchItems();
+            if (noMoreRemaining.current) {
+                localStorage.removeItem(sessionKey);
+                currentItemRef.current = null;
+                setCurrentItem(null);
+                setCompleted(true);
+            } else {
+                fetchItems();
+            }
             isProcessingNext.current = false;
             return;
         }
-        const next = queue[0];
+        const next = queueRef.current[0];
         console.log(`[Study Debug] Advancing to next item:`, `${next.item_type}:${next.content_id}`);
+        
         setQueue(prev => prev.slice(1));
+        queueRef.current = queueRef.current.slice(1);
         setCurrentItem(next);
         setIsFlipped(false);
 
         // Pre-fetch if queue is low (not for random mode — we have a fixed set)
-        if (mode !== 'random' && queue.length < 3) {
-            console.log(`[Study Debug] Queue low (${queue.length - 1} remaining), pre-fetching...`);
+        if (mode !== 'random' && queueRef.current.length < 3) {
+            console.log(`[Study Debug] Queue low (${queueRef.current.length} remaining), pre-fetching...`);
             fetchItems(true);
         }
 
@@ -240,13 +263,21 @@ function StudyContent() {
         setLastReviewedItem(reviewedItem);
         setLastReviewedQuality(quality);
         reviewedInSession.current.add(`${reviewedItem.item_type}:${reviewedItem.content_id}`);
-        setStats(prev => ({ ...prev, studied: prev.studied + 1, due: Math.max(0, prev.due - 1) }));
+        
+        if (mode === 'random' && quality < 2) {
+            // Re-queue wrong answer in random mode
+            setQueue(prev => [...prev, reviewedItem]);
+            queueRef.current = [...queueRef.current, reviewedItem];
+        } else {
+            setStats(prev => ({ ...prev, studied: prev.studied + 1, due: Math.max(0, prev.due - 1) }));
+        }
 
         // Check for stale session before advancing
         if (!reviewedItem.is_practice && mode !== 'random' && !reviewedItem.user_progress_id) {
             console.warn('[Study] Stale session - clearing and restarting');
             localStorage.removeItem(sessionKey);
             setQueue([]);
+            queueRef.current = [];
             setCurrentItem(null);
             fetchItems();
             return;
@@ -301,7 +332,7 @@ function StudyContent() {
         }
     };
 
-    if (loading && queue.length === 0) {
+    if (loading && queue.length === 0 && !completed) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="flex flex-col items-center">
@@ -312,81 +343,81 @@ function StudyContent() {
         );
     }
 
-    if (completed) {
-        return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center">
-                <CompletionScreen isSRS={mode === 'srs'} />
-            </div>
-        );
-    }
-
-    if (!currentItem) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="w-16 h-16 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin mb-4" />
-            </div>
-        );
-    }
-
     const progressText = mode === 'srs'
-        ? `Due: ${stats.due}`
-        : `Remaining: ${queue.length + 1}`;
+        ? (completed ? "Review session complete" : `Due: ${stats.due}`)
+        : (completed ? "Practice session complete" : `Remaining: ${queue.length + 1}`);
 
     return (
         <div className="flex flex-col items-center py-1 md:py-8">
             <StudyHeader
                 mode={mode}
                 progress={progressText}
-                title={currentItem.source_title}
+                title={completed ? "Session Complete" : currentItem?.source_title}
             />
 
-            <StudyCard
-                nom={currentItem.nom}
-                contextLine={currentItem.context_line}
-                quocNgu={currentItem.quoc_ngu}
-                english={currentItem.english}
-                sourceTitle={currentItem.source_title}
-                lineNumber={currentItem.line_number}
-                itemType={currentItem.item_type}
-                isFlipped={isFlipped}
-                contentId={currentItem.content_id}
-            />
+            <div className="w-full max-w-[600px] mt-4 md:mt-8">
+                {completed ? (
+                    <CompletionScreen isSRS={mode === 'srs'} />
+                ) : currentItem ? (
+                    <>
+                        <StudyCard
+                            nom={currentItem.nom}
+                            contextLine={currentItem.context_line}
+                            quocNgu={currentItem.quoc_ngu}
+                            english={currentItem.english}
+                            sourceTitle={currentItem.source_title}
+                            lineNumber={currentItem.line_number}
+                            itemType={currentItem.item_type}
+                            isFlipped={isFlipped}
+                            contentId={currentItem.content_id}
+                        />
 
-            <ReviewControls
-                isFlipped={isFlipped}
-                onShow={() => setIsFlipped(true)}
-                onSubmit={handlesubmitReview}
-                intervals={currentItem.intervals}
-                isPractice={mode === 'random'}
-            />
+                        <ReviewControls
+                            isFlipped={isFlipped}
+                            onShow={() => setIsFlipped(true)}
+                            onSubmit={handlesubmitReview}
+                            intervals={currentItem.intervals}
+                            isPractice={mode === 'random'}
+                        />
 
-            <div className="flex gap-3 mt-4 md:mt-6 w-full max-w-[600px]">
-                <button
-                    onClick={handleUndo}
-                    disabled={!canUndo}
-                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
-                >
-                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
-                </button>
-                <button
-                    onClick={() => setIsAddToListOpen(true)}
-                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
-                >
-                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
-                </button>
+                        <div className="flex gap-3 mt-4 md:mt-6 w-full">
+                            <button
+                                onClick={handleUndo}
+                                disabled={!canUndo}
+                                className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
+                            >
+                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
+                            </button>
+                            <button
+                                onClick={() => setIsAddToListOpen(true)}
+                                className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
+                            >
+                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex items-center justify-center min-h-[300px]">
+                        <div className="w-12 h-12 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin" />
+                    </div>
+                )}
             </div>
 
-            <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
-                Your Progress is Automatically Saved
-            </div>
+            {!completed && (
+                <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
+                    Your Progress is Automatically Saved
+                </div>
+            )}
 
-            <AddToListModal
-                isOpen={isAddToListOpen}
-                onClose={() => setIsAddToListOpen(false)}
-                itemId={currentItem.content_id}
-                itemType={currentItem.item_type}
-                itemName={currentItem.nom.replace(/<[^>]*>/g, '')}
-            />
+            {currentItem && (
+                <AddToListModal
+                    isOpen={isAddToListOpen}
+                    onClose={() => setIsAddToListOpen(false)}
+                    itemId={currentItem.content_id}
+                    itemType={currentItem.item_type}
+                    itemName={currentItem.nom.replace(/<[^>]*>/g, '')}
+                />
+            )}
         </div>
     );
 }

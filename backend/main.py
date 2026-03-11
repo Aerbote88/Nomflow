@@ -747,21 +747,19 @@ def get_texts(session: Session = Depends(get_session)):
 # ... (Dashboard unchanged) ...
 
 @app.get("/api/dashboard/stats", response_model=DashboardStats)
-def get_dashboard_stats(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+def get_dashboard_stats(
+    text_id: Optional[int] = None,
+    list_id: Optional[int] = None,
+    user: User = Depends(get_current_user), 
+    session: Session = Depends(get_session)
+):
     try:
         now = datetime.utcnow()
 
-        # Single query for all three progress counts
-        counts_row = session.exec(
-            select(
-                func.sum(case((UserProgress.next_review_due <= now, 1), else_=0)).label("due"),
-                func.sum(case((UserProgress.is_learning == True, 1), else_=0)).label("learning"),
-                func.sum(case((UserProgress.is_learning == False, 1), else_=0)).label("learned"),
-            ).where(UserProgress.user_id == user.id)
-        ).one()
-        due_count = int(counts_row.due or 0)
-        learning_count = int(counts_row.learning or 0)
-        learned_count = int(counts_row.learned or 0)
+        counts = _get_user_progress_counts(user.id, session, text_id=text_id, list_id=list_id)
+        due_count = counts["due"]
+        learning_count = counts["learning"]
+        learned_count = counts["learned"]
 
         settings = session.exec(select(UserSettings).where(UserSettings.user_id == user.id)).first()
         if not settings:
@@ -838,20 +836,22 @@ def get_next_study_item(
     user: User = Depends(get_current_user), 
     session: Session = Depends(get_session)
 ):
+    # Common Parameter Parsing
+    target_list_id = list_id
+    target_text_id = text_id
+    target_item_type = None
+    
+    if custom_params:
+        for p in custom_params.split(','):
+            if p.startswith('type:'):
+                target_item_type = p.split(':')[1]
+
     # 1. Random Mode Implementation
     if mode == "random":
-        target_list_id = list_id
-        target_text_id = text_id
-        
         results = []
         import random
 
-        # Content Type Filtering
-        target_item_type = None
-        if custom_params:
-            for p in custom_params.split(','):
-                if p.startswith('type:'):
-                    target_item_type = p.split(':')[1]
+        # Content Type Filtering handled at function level
 
         # Parse seen items to exclude
         excluded = set()
@@ -1014,8 +1014,6 @@ def get_next_study_item(
 
     # 2. Regular SRS Mode
     # Use provided list_id/text_id or fall back to user settings
-    target_list_id = list_id
-    target_text_id = text_id
     total_due = 0
     settings = None
     
@@ -1037,24 +1035,39 @@ def get_next_study_item(
                 session.add(settings)
                 session.commit()
 
-    # A. Check for Due Reviews
-    # Only apply source filtering if explicitly requested (Custom Study), not for regular Comprehensive Study
+    # Initialize base query for due items
     review_query = select(UserProgress).where(
         UserProgress.user_id == user.id,
         UserProgress.next_review_due <= datetime.utcnow()
     )
 
-    # Content Type Filtering for SRS
-    target_item_type = None
-    if custom_params:
-        for p in custom_params.split(','):
-            if p.startswith('type:'):
-                target_item_type = p.split(':')[1]
+    # Only apply expensive source filtering if text_id or list_id was EXPLICITLY provided (not from settings)
+    # This keeps Comprehensive Study fast while enabling Custom Study filtering
+    if list_id:
+        # Join with StudyListItem to filter
+        review_query = review_query.join(
+            StudyListItem, 
+            (UserProgress.item_type == StudyListItem.item_type) & 
+            (UserProgress.item_id == StudyListItem.item_id)
+        ).where(StudyListItem.study_list_id == target_list_id)
+    elif text_id:
+        # Optimized EXISTS approach for SQLite
+        from sqlmodel import exists
+
+        review_query = review_query.where(
+            (
+                (UserProgress.item_type == "character") & 
+                (
+                    exists().where(Line.text_id == text_id, Line.dictionary_id == UserProgress.item_id) |
+                    exists().where(Line.text_id == text_id, Line.line_dictionary_id == ExpressionCharacter.line_dict_id, ExpressionCharacter.dictionary_id == UserProgress.item_id)
+                )
+            ) | (
+                (UserProgress.item_type == "line") & 
+                (exists().where(Line.text_id == text_id, Line.line_dictionary_id == UserProgress.item_id))
+            )
+        )
     
-    if target_item_type:
-        review_query = review_query.where(UserProgress.item_type == target_item_type)
-    
-    # Calculate total due count before excluding seen items
+    # Calculate total due count AFTER source filtering is applied
     total_due = session.exec(select(func.count()).select_from(review_query.subquery())).one()
     
     # Parse seen items into a set for reuse (also applied to new items below)
@@ -1083,31 +1096,7 @@ def get_next_study_item(
     else:
         print(f"[Study API] No seen parameter provided")
     
-    # Only apply expensive source filtering if text_id or list_id was EXPLICITLY provided (not from settings)
-    # This keeps Comprehensive Study fast while enabling Custom Study filtering
-    if list_id:
-        # Join with StudyListItem to filter
-        review_query = review_query.join(
-            StudyListItem, 
-            (UserProgress.item_type == StudyListItem.item_type) & 
-            (UserProgress.item_id == StudyListItem.item_id)
-        ).where(StudyListItem.study_list_id == target_list_id)
-    elif text_id:
-        # Optimized EXISTS approach for SQLite
-        from sqlmodel import exists
-
-        review_query = review_query.where(
-            (
-                (UserProgress.item_type == "character") & 
-                (
-                    exists().where(Line.text_id == text_id, Line.dictionary_id == UserProgress.item_id) |
-                    exists().where(Line.text_id == text_id, Line.line_dictionary_id == ExpressionCharacter.line_dict_id, ExpressionCharacter.dictionary_id == UserProgress.item_id)
-                )
-            ) | (
-                (UserProgress.item_type == "line") & 
-                (exists().where(Line.text_id == text_id, Line.line_dictionary_id == UserProgress.item_id))
-            )
-        )
+    # Note: Source filtering already applied above if list_id or text_id provided
     
     # To prevent duplicate items (same item_type + item_id), we need to deduplicate
     # Use the subquery columns explicitly to avoid confusion with the base table
@@ -1135,7 +1124,7 @@ def get_next_study_item(
     
     # Fill from Due Items first
     if due_items:
-        results = _get_content_batch(due_items, session, preferred_text_id=target_text_id)
+        results = _get_content_batch(due_items, session, preferred_text_id=target_text_id, preferred_list_id=target_list_id)
         print(f"[Study API Debug] Returning {len(results)} due items: {[r['content_id'] for r in results]}")
         for content in results:
             content["is_new"] = False
@@ -1289,7 +1278,7 @@ def get_next_study_item(
             session.commit() # Save all new progress items in one go
             for prog in new_progress_items:
                 session.refresh(prog)  # Ensure DB-assigned IDs are loaded before batch fetch
-            new_contents = _get_content_batch(new_progress_items, session, preferred_text_id=target_text_id)
+            new_contents = _get_content_batch(new_progress_items, session, preferred_text_id=target_text_id, preferred_list_id=target_list_id)
             for content in new_contents:
                 content["is_new"] = True
                 results.append(content)
@@ -1799,7 +1788,47 @@ def get_user_vocab(user: User = Depends(get_current_user), session: Session = De
         
     return results
 
-def _get_content_batch(progress_items: List[UserProgress], session: Session, include_context: bool = True, preferred_text_id: Optional[int] = None):
+def _get_user_progress_counts(user_id: int, session: Session, text_id: Optional[int] = None, list_id: Optional[int] = None):
+    now = datetime.utcnow()
+    query = select(UserProgress).where(UserProgress.user_id == user_id)
+    
+    if list_id:
+        query = query.join(
+            StudyListItem, 
+            (UserProgress.item_type == StudyListItem.item_type) & 
+            (UserProgress.item_id == StudyListItem.item_id)
+        ).where(StudyListItem.study_list_id == list_id)
+    elif text_id:
+        from sqlmodel import exists
+        query = query.where(
+            (
+                (UserProgress.item_type == "character") & 
+                (
+                    exists().where(Line.text_id == text_id, Line.dictionary_id == UserProgress.item_id) |
+                    exists().where(Line.text_id == text_id, Line.line_dictionary_id == ExpressionCharacter.line_dict_id, ExpressionCharacter.dictionary_id == UserProgress.item_id)
+                )
+            ) | (
+                (UserProgress.item_type == "line") & 
+                (exists().where(Line.text_id == text_id, Line.line_dictionary_id == UserProgress.item_id))
+            )
+        )
+        
+    sub = query.subquery()
+    counts_row = session.exec(
+        select(
+            func.sum(case((sub.c.next_review_due <= now, 1), else_=0)).label("due"),
+            func.sum(case((sub.c.is_learning == True, 1), else_=0)).label("learning"),
+            func.sum(case((sub.c.is_learning == False, 1), else_=0)).label("learned"),
+        )
+    ).one()
+    
+    return {
+        "due": int(counts_row.due or 0),
+        "learning": int(counts_row.learning or 0),
+        "learned": int(counts_row.learned or 0)
+    }
+
+def _get_content_batch(progress_items: List[UserProgress], session: Session, include_context: bool = True, preferred_text_id: Optional[int] = None, preferred_list_id: Optional[int] = None):
     if not progress_items:
         return []
     
@@ -1808,12 +1837,20 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
     settings = session.exec(select(UserSettings).where(UserSettings.user_id == user_id)).first()
     active_text_id = preferred_text_id or (settings.active_text_id if settings else None)
 
-    # 2. Check if current source is a Curated Curriculum
+    # 2. Source Resolution for title labeling
+    source_title = None
     is_curated = False
-    if active_text_id:
+    
+    if preferred_list_id:
+        lst = session.get(StudyList, preferred_list_id)
+        if lst:
+            source_title = lst.name
+    elif active_text_id:
         txt = session.get(SourceText, active_text_id)
-        if txt and txt.author in ["Chunom.org", "Digitizing Vietnam Team"]:
-            is_curated = True
+        if txt:
+            source_title = txt.title
+            if txt.author in ["Chunom.org", "Digitizing Vietnam Team"]:
+                is_curated = True
             
     # 3. Bulk fetch Character and Expression
     char_ids = [p.item_id for p in progress_items if p.item_type == "character"]
@@ -1935,6 +1972,7 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
                 "nom": entry.nom_char,
                 "quoc_ngu": _clean_text(entry.quoc_ngu),
                 "context_line": context_line,
+                "source_title": source_title,
                 "intervals": get_review_intervals(progress)
             })
         else:
