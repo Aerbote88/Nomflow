@@ -44,16 +44,16 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
     const options = [
         {
             id: 'srs',
-            title: 'SRS Mastery',
-            description: 'The definitive path. Review due items and learn new content using Spaced Repetition.',
+            title: 'SRS Review',
+            description: 'Review due items and learn new content with Spaced Repetition.',
             icon: '🏛️',
             action: () => startStudy('srs'),
             color: 'border-accent-primary bg-accent-primary/5 hover:bg-accent-primary/10'
         },
         {
             id: 'random',
-            title: 'Incidental Practice',
-            description: 'Study a random selection of items. Perfect for quick sessions without stakes.',
+            title: 'Random',
+            description: 'Study a random selection of items. No SRS stakes.',
             icon: '✨',
             customUI: (
                 <div className="mt-4 flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 pointer-events-auto">
@@ -70,8 +70,8 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
         },
         {
             id: 'challenge',
-            title: 'Chronicle Challenge',
-            description: 'Progress through the source line-by-line. A true test of endurance and memory.',
+            title: 'Challenge',
+            description: 'Progress line-by-line, type the reading. Compete on the leaderboard.',
             icon: '⚔️',
             action: () => router.push(`/challenge?${sourceType === 'list' ? 'list_id' : 'text_id'}=${sourceId}`),
             color: 'border-red-500/30 bg-red-500/5 hover:bg-red-500/10'
@@ -98,7 +98,7 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
                     <h2 className="text-3xl font-display font-bold text-text-primary leading-tight">
                         {sourceName}
                     </h2>
-                    <p className="text-xs text-text-secondary italic mt-2 opacity-60">"Select your methodology of reflection."</p>
+                    <p className="text-xs text-text-secondary mt-2 opacity-60">Choose your study mode.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">

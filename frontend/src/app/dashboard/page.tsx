@@ -88,8 +88,9 @@ export default function DashboardPage() {
                             className="w-full glass-card !p-3 flex justify-between items-center border-accent-primary/20 hover:border-accent-primary/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-accent-primary/10 flex items-center justify-center text-accent-primary font-bold border border-accent-gold/20">
-                                    {stats.level}
+                                <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex flex-col items-center justify-center text-accent-primary border border-accent-gold/20">
+                                    <span className="text-[7px] font-black uppercase leading-none mb-0.5 opacity-70">Lvl</span>
+                                    <span className="text-sm font-bold leading-none">{stats.level}</span>
                                 </div>
                                 <div className="flex flex-col items-start translate-y-[1px]">
                                     <span className="text-[9px] text-accent-primary uppercase font-black tracking-[0.2em] leading-none mb-2 opacity-80">Quick Stats</span>
@@ -179,7 +180,7 @@ export default function DashboardPage() {
                         className="w-full text-xl py-5"
                         onClick={() => window.location.href = '/study?mode=srs'}
                     >
-                        Comprehensive Study
+                        Start Session
                     </Button>
                     <Button
                         variant="secondary"

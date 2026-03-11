@@ -61,6 +61,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Maintenance Mode Middleware
+@app.middleware("http")
+async def maintenance_middleware(request: Request, call_next):
+    # Skip for health check or if not enabled
+    if request.url.path == "/api/health" or os.getenv("MAINTENANCE_MODE") != "true":
+        return await call_next(request)
+    
+    # Return 503 for API calls
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Site is currently undergoing maintenance. Please check back later."},
+            headers={"Retry-After": "3600"}
+        )
+    
+    # Optional: Redirect web requests to /maintenance if they aren't /api or /maintenance
+    if request.url.path != "/maintenance":
+         return RedirectResponse(url="/maintenance")
+         
+    return await call_next(request)
+
 # Enable GZIP compression for all responses > 1000 bytes (Huge performance boost for JSON arrays)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
@@ -1631,14 +1652,28 @@ def get_list_details(list_id: int, user: User = Depends(get_current_user), sessi
     lst = session.exec(select(StudyList).where(StudyList.id == list_id, StudyList.user_id == user.id)).first()
     if not lst: raise HTTPException(404, "List not found")
     
-    # Get items
+    # Optimized Bulk Fetch
+    items_raw = lst.items
+    char_ids = [li.item_id for li in items_raw if li.item_type == "character"]
+    line_ids = [li.item_id for li in items_raw if li.item_type == "line"]
+    
+    char_map = {}
+    if char_ids:
+        chars = session.exec(select(Character).where(Character.id.in_(char_ids))).all()
+        char_map = {c.id: c for c in chars}
+        
+    line_map = {}
+    if line_ids:
+        lines = session.exec(select(Expression).where(Expression.id.in_(line_ids))).all()
+        line_map = {l.id: l for l in lines}
+        
     items = []
-    for li in lst.items:
+    for li in items_raw:
         if li.item_type == "character":
-            c = session.get(Character, li.item_id)
+            c = char_map.get(li.item_id)
             if c: items.append({"id": c.id, "type": "character", "nom": c.nom_char, "quoc_ngu": c.quoc_ngu})
         elif li.item_type == "line":
-            l = session.get(Expression, li.item_id)
+            l = line_map.get(li.item_id)
             if l: items.append({"id": l.id, "type": "line", "nom": l.nom_text, "quoc_ngu": l.quoc_ngu_text})
             
     return {"id": lst.id, "name": lst.name, "description": lst.description, "items": items}
@@ -2265,22 +2300,33 @@ def clear_challenge_session_query(mode: Optional[str] = None, text_id: Optional[
 def get_challenge_content(text_id: str, session: Session = Depends(get_session)):
     if text_id == "all" or text_id == "0":
          # Global challenge
-         lines = session.exec(select(Line).options(joinedload(Line.line_dict)).order_by(Line.id).limit(1000)).all()
+         lines = session.exec(select(Line).options(joinedload(Line.line_dict), joinedload(Line.dictionary_entry)).order_by(Line.id).limit(1000)).all()
     else:
-         lines = session.exec(select(Line).options(joinedload(Line.line_dict)).where(Line.text_id == int(text_id)).order_by(Line.line_number, Line.id)).all()
+         lines = session.exec(select(Line).options(joinedload(Line.line_dict), joinedload(Line.dictionary_entry)).where(Line.text_id == int(text_id)).order_by(Line.line_number, Line.id)).all()
     
     return [{"id": l.id, "nom": l.nom_text, "quoc_ngu": l.quoc_ngu_text} for l in lines]
 
 @app.get("/api/challenge/list/{list_id}")
 def get_challenge_list_content(list_id: int, session: Session = Depends(get_session)):
     # Get all items in the list
-    # Get all items in the list - Stable order by ID
     list_items = session.exec(select(StudyListItem).where(StudyListItem.study_list_id == list_id).order_by(StudyListItem.id)).all()
     
+    mock_progress = [
+        UserProgress(item_type=item.item_type, item_id=item.item_id, user_id=0, next_review_due=datetime.utcnow())
+        for item in list_items
+    ]
+    
+    batch_content = _get_content_batch(mock_progress, session, include_context=False)
+    
     results = []
+    # Map batch content back to original list item IDs for reference
+    # Note: _get_content_batch might return fewer items if some are missing in DB, 
+    # but for challenge mode we want to preserve as many as possible.
+    # We can match by (item_type, item_id)
+    content_map = {(c["item_type"], c["content_id"]): c for c in batch_content}
+    
     for item in list_items:
-        prog = UserProgress(item_type=item.item_type, item_id=item.item_id, user_id=0, next_review_due=datetime.utcnow()) # Mock prog for content helper
-        content = _get_content(prog, session)
+        content = content_map.get((item.item_type, item.item_id))
         if content:
             results.append({"id": item.id, "nom": content["nom"], "quoc_ngu": content["quoc_ngu"]})
             

@@ -19,7 +19,7 @@ export function Footer() {
                     </a>
                 </div>
                 <div className="opacity-80">
-                    Hosted by{' '}
+                    Part of{' '}
                     <a href="https://www.digitizingvietnam.com/en" target="_blank" rel="noopener noreferrer"
                         className="text-accent-primary hover:text-accent-hover transition-colors font-medium">
                         Digitizing Vietnam
