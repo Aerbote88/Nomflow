@@ -8,6 +8,7 @@ import { Button } from '@/components/ui';
 export function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState<string | null>(null);
 
@@ -17,8 +18,12 @@ export function Navbar() {
         setCurrentUser(username);
     }, [pathname]);
 
+    // Close menu when route changes
+    useEffect(() => {
+        setIsMenuOpen(false);
+    }, [pathname]);
+
     const handleLogout = () => {
-        // Clear all saved study sessions so a different user doesn't inherit them
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('study_session_')) localStorage.removeItem(key);
         });
@@ -28,58 +33,115 @@ export function Navbar() {
 
     if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password') return null;
 
-    return (
-        <>
-        <nav className="w-full flex justify-between items-center mb-8 border-b border-accent-gold/10 pb-6 animate-in fade-in duration-700">
-            <Link href="/" className="group flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center text-accent-primary font-nom text-xl border border-accent-gold/20 group-hover:bg-accent-primary/20 transition-all duration-300">
-                    𡨸
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-xl font-display font-bold tracking-tight text-text-primary">NômFlow</span>
-                    <span className="text-[8px] font-display font-bold uppercase tracking-[0.4em] text-accent-primary opacity-60">Script, Simplified</span>
-                </div>
-            </Link>
+    const navLinks = [
+        { href: '/dashboard', label: 'Dashboard' },
+        { href: '/library', label: 'Library' },
+        { href: '/vocab', label: 'Flashcards' },
+        { href: '/leaderboard', label: 'Leaderboard' },
+        { href: '/settings', label: 'Settings' },
+    ];
 
-            <div className="flex items-center gap-4 md:gap-8">
-                {isLoggedIn ? (
-                    <>
-                        <Link href="/dashboard" className={`text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/dashboard' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
-                            Dashboard
+    return (
+        <nav className="w-full mb-4 md:mb-8 border-b border-accent-gold/10 pb-3 md:pb-6 animate-in fade-in duration-700 relative z-[100]">
+            <div className="flex justify-between items-center">
+                <Link href="/" className="group flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center text-accent-primary font-nom text-xl border border-accent-gold/20 group-hover:bg-accent-primary/20 transition-all duration-300">
+                        𡨸
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xl font-display font-bold tracking-tight text-text-primary">NômFlow</span>
+                        <span className="text-[8px] font-display font-bold uppercase tracking-[0.4em] text-accent-primary opacity-60">Script, Simplified</span>
+                    </div>
+                </Link>
+
+                {/* Hamburger Toggle */}
+                <button 
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="md:hidden p-2 text-text-secondary hover:text-accent-primary transition-colors"
+                >
+                    {isMenuOpen ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    )}
+                </button>
+
+                {/* Desktop Links */}
+                <div className="hidden md:flex items-center gap-8">
+                    {isLoggedIn ? (
+                        <>
+                            {navLinks.map((link) => (
+                                <Link 
+                                    key={link.href}
+                                    href={link.href} 
+                                    className={`text-[11px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith(link.href) ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                            {currentUser && (
+                                <span className="text-[11px] font-black uppercase tracking-widest text-text-secondary opacity-50">
+                                    {currentUser}
+                                </span>
+                            )}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleLogout}
+                                className="text-[11px] font-black text-red-500/60 hover:text-red-500 hover:bg-red-500/10 uppercase tracking-[0.2em]"
+                            >
+                                Sign Out
+                            </Button>
+                        </>
+                    ) : (
+                        <Link href="/login" className="text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors">
+                            Sign In
                         </Link>
-                        <Link href="/library" className={`text-[11px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith('/library') ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
-                            Library
-                        </Link>
-                        <Link href="/vocab" className={`hidden md:block text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/vocab' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
-                            Flashcards
-                        </Link>
-                        <Link href="/leaderboard" className={`hidden md:block text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/leaderboard' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
-                            Leaderboard
-                        </Link>
-                        <Link href="/settings" className={`hidden md:block text-[11px] font-black uppercase tracking-widest transition-colors ${pathname === '/settings' ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}>
-                            Settings
-                        </Link>
-{currentUser && (
-                            <span className="text-[11px] font-black uppercase tracking-widest text-text-secondary opacity-50">
-                                {currentUser}
-                            </span>
-                        )}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleLogout}
-                            className="text-[11px] font-black text-red-500/60 hover:text-red-500 hover:bg-red-500/10 uppercase tracking-[0.2em]"
-                        >
-                            Sign Out
-                        </Button>
-                    </>
-                ) : (
-                    <Link href="/login" className="text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors">
-                        Sign In
-                    </Link>
-                )}
+                    )}
+                </div>
             </div>
+
+            {/* Mobile Menu */}
+            {isMenuOpen && (
+                <div className="md:hidden absolute top-full left-0 w-full mt-2 glass-card !p-4 border-accent-gold/20 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
+                    {isLoggedIn ? (
+                        <>
+                            {navLinks.map((link) => (
+                                <Link 
+                                    key={link.href}
+                                    href={link.href} 
+                                    className={`text-sm font-black uppercase tracking-[0.2em] transition-colors py-2 border-b border-white/5 last:border-0 ${pathname?.startsWith(link.href) ? 'text-accent-primary' : 'text-text-secondary'}`}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                            <div className="flex justify-between items-center pt-2">
+                                {currentUser && (
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-50">
+                                        Hi, {currentUser}
+                                    </span>
+                                )}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleLogout}
+                                    className="text-[10px] font-black text-red-500/60 hover:text-red-500 uppercase tracking-widest"
+                                >
+                                    Sign Out
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <Link href="/login" className="text-sm font-black uppercase tracking-[0.2em] text-text-secondary py-2">
+                            Sign In
+                        </Link>
+                    )}
+                </div>
+            )}
         </nav>
-        </>
     );
 }

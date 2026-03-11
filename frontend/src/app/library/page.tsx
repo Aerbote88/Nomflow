@@ -95,21 +95,21 @@ export default function LibraryPage() {
     }
 
     return (
-        <div className="max-w-[1000px] mx-auto py-8 px-4 md:px-6">
-            <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6">
+            <header className="mb-6 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div>
                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2 leading-none">
                         Your Repository
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-display font-bold text-text-primary tracking-tight">
+                    <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">
                         Library
                     </h1>
                 </div>
             </header>
 
             {/* Premade Texts Section */}
-            <section className="mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-                <h2 className="text-sm font-black text-text-primary uppercase tracking-[0.3em] mb-8 flex items-center gap-4">
+            <section className="mb-10 md:mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                <h2 className="text-[10px] md:text-sm font-black text-text-primary uppercase tracking-[0.3em] mb-6 md:mb-8 flex items-center gap-4">
                     Curated Lists
                     <div className="h-[1px] flex-grow bg-white/10" />
                 </h2>
@@ -133,10 +133,10 @@ export default function LibraryPage() {
 
             {/* Custom Lists Section */}
             <section className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-sm font-black text-text-primary uppercase tracking-[0.3em] flex items-center gap-4">
+                <div className="flex items-center justify-between mb-6 md:mb-8">
+                    <h2 className="text-[10px] md:text-sm font-black text-text-primary uppercase tracking-[0.3em] flex items-center gap-4">
                         Custom Lists
-                        <div className="h-[1px] w-32 bg-white/10" />
+                        <div className="h-[1px] w-24 md:w-32 bg-white/10" />
                     </h2>
                     <Button
                         size="sm"

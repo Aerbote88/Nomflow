@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import { GlassCard, Button } from '@/components/ui';
+import { GlassCard, Button, Portal } from '@/components/ui';
 
 interface CreateListModalProps {
     isOpen: boolean;
@@ -46,8 +46,9 @@ export const CreateListModal: React.FC<CreateListModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+        <Portal>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
 
             <GlassCard className="w-full max-w-[450px] relative z-10 border-accent-primary/20 p-8 animate-in zoom-in-95 duration-300">
                 <h2 className="text-3xl font-display font-bold text-text-primary mb-2">Create New List</h2>
@@ -100,5 +101,6 @@ export const CreateListModal: React.FC<CreateListModalProps> = ({
                 </form>
             </GlassCard>
         </div>
+        </Portal>
     );
 };

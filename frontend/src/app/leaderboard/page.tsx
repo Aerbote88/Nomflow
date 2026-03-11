@@ -55,25 +55,25 @@ function LeaderboardContent() {
     }, [source, period]);
 
     const renderSkeleton = () => (
-        <div className="space-y-3 animate-pulse w-full">
+        <div className="space-y-2 md:space-y-3 animate-pulse w-full">
             {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="h-14 bg-white/5 rounded-2xl border border-white/5" />
+                <div key={i} className="h-10 md:h-14 bg-white/5 rounded-xl md:rounded-2xl border border-white/5" />
             ))}
         </div>
     );
 
     return (
-        <div className="max-w-[1000px] mx-auto py-8 px-4 md:px-6 animate-in fade-in duration-500">
-            <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 animate-in fade-in duration-500">
+            <header className="mb-6 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">Hall of Scholars</div>
-                    <h1 className="text-5xl md:text-6xl font-display font-bold text-text-primary tracking-tight">Leaderboard</h1>
+                    <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">Leaderboard</h1>
                 </div>
 
                 <select
                     value={source}
                     onChange={(e) => setSource(e.target.value)}
-                    className="w-full md:w-64 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary font-bold appearance-none outline-none focus:border-accent-primary/50 transition-colors cursor-pointer"
+                    className="w-full md:w-64 px-3 md:px-4 py-2 md:py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary text-sm md:text-base font-bold appearance-none outline-none focus:border-accent-primary/50 transition-colors cursor-pointer"
                 >
                     <option value="global" className="bg-bg-primary">🌍 Global (XP)</option>
                     <optgroup label="Source Specific" className="bg-bg-primary text-text-secondary font-bold">
@@ -85,13 +85,13 @@ function LeaderboardContent() {
             </header>
 
             {source === 'global' && (
-                <div className="flex justify-center mb-8">
-                    <div className="inline-flex p-1 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex justify-center mb-6 md:mb-8 text-center">
+                    <div className="inline-flex p-1 bg-white/5 rounded-xl border border-white/10 overflow-hidden">
                         {(['daily', 'weekly', 'monthly', 'lifetime'] as const).map((p) => (
                             <button
                                 key={p}
                                 onClick={() => setPeriod(p)}
-                                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${period === p
+                                className={`px-2.5 md:px-4 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${period === p
                                     ? 'bg-accent-primary text-white shadow-md'
                                     : 'text-text-secondary hover:text-text-primary'
                                     }`}
@@ -115,29 +115,29 @@ function LeaderboardContent() {
                             globalData.map((ranking, idx) => (
                                 <div
                                     key={idx}
-                                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${idx === 0 ? 'bg-accent-gold/10 border-accent-gold/30 shadow-md' :
+                                    className={`flex items-center justify-between p-2.5 md:p-4 rounded-xl md:rounded-2xl border transition-all ${idx === 0 ? 'bg-accent-gold/10 border-accent-gold/30 shadow-md' :
                                             idx === 1 ? 'bg-white/5 border-white/10' :
                                                 idx === 2 ? 'bg-accent-primary/5 border-accent-primary/15' :
                                                     'bg-white/3 border-white/5'
                                         }`}
                                 >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-accent-gold text-white shadow-lg' :
+                                    <div className="flex items-center gap-2 md:gap-4">
+                                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-black text-[10px] md:text-sm ${idx === 0 ? 'bg-accent-gold text-white shadow-lg' :
                                                 idx === 1 ? 'bg-white/20 text-text-primary' :
                                                     idx === 2 ? 'bg-accent-primary/20 text-accent-primary' :
                                                         'text-text-secondary/40'
                                             }`}>
                                             {idx + 1}
                                         </div>
-                                        <span className={`font-bold ${idx === 0 ? 'text-xl text-text-primary font-display' : 'text-text-primary'}`}>
+                                        <span className={`font-bold text-sm md:text-base ${idx === 0 ? 'text-lg md:text-xl text-text-primary font-display' : 'text-text-primary'}`}>
                                             {ranking.username}
                                         </span>
                                     </div>
-                                    <div>
-                                        <span className={`font-black ${idx === 0 ? 'text-accent-primary text-lg' : 'text-text-secondary'}`}>
+                                    <div className="flex items-center gap-1">
+                                        <span className={`font-black text-sm md:text-base ${idx === 0 ? 'text-accent-primary text-base md:text-lg' : 'text-text-secondary'}`}>
                                             {ranking.xp.toLocaleString()}
                                         </span>
-                                        <span className="text-[10px] uppercase font-black tracking-widest text-text-secondary/40 ml-1">XP</span>
+                                        <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest text-text-secondary/40">XP</span>
                                     </div>
                                 </div>
                             ))
@@ -149,21 +149,21 @@ function LeaderboardContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <GlassCard className="border-white/5">
                             <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 mb-4 flex items-center gap-2">
-                                <span>💀</span> Sudden Death
+                                <span>💀</span> Challenge Mode
                             </h3>
                             <div className="space-y-2">
                                 {sourceData.challenge.length === 0 ? (
                                     <div className="text-center py-8 text-text-secondary/30 italic text-xs">No records yet</div>
                                 ) : sourceData.challenge.map((r, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 bg-white/3 rounded-xl border border-white/5 hover:border-red-500/20 transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-black text-text-secondary/30 w-4">{idx + 1}</span>
-                                            <span className="font-bold text-text-primary text-sm">{r.username}</span>
-                                            {r.is_live && <span className="text-[8px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase animate-pulse">Live</span>}
+                                    <div key={idx} className="flex justify-between items-center p-2 md:p-3 bg-white/3 rounded-lg md:rounded-xl border border-white/5 hover:border-red-500/20 transition-all">
+                                        <div className="flex items-center gap-2 md:gap-3">
+                                            <span className="text-[9px] md:text-[10px] font-black text-text-secondary/30 w-3 md:w-4">{idx + 1}</span>
+                                            <span className="font-bold text-text-primary text-xs md:text-sm">{r.username}</span>
+                                            {r.is_live && <span className="text-[7px] md:text-[8px] bg-emerald-500 text-white px-1 md:px-1.5 py-0.5 rounded-full font-black uppercase animate-pulse">Live</span>}
                                         </div>
-                                        <div>
-                                            <span className="font-black text-accent-primary">{r.score}</span>
-                                            <span className="text-[8px] text-text-secondary/40 uppercase font-black tracking-widest ml-1">Lines</span>
+                                        <div className="flex items-center gap-1">
+                                            <span className="font-black text-accent-primary text-sm md:text-base">{r.score}</span>
+                                            <span className="text-[7px] md:text-[8px] text-text-secondary/40 uppercase font-black tracking-widest">Lines</span>
                                         </div>
                                     </div>
                                 ))}
@@ -172,21 +172,21 @@ function LeaderboardContent() {
 
                         <GlassCard className="border-white/5">
                             <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 mb-4 flex items-center gap-2">
-                                <span>🎻</span> Scholarly Pace
+                                <span>🎻</span> Practice Mode
                             </h3>
                             <div className="space-y-2">
                                 {sourceData.normal.length === 0 ? (
                                     <div className="text-center py-8 text-text-secondary/30 italic text-xs">No records yet</div>
                                 ) : sourceData.normal.map((r, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-3 bg-white/3 rounded-xl border border-white/5 hover:border-accent-gold/20 transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-black text-text-secondary/30 w-4">{idx + 1}</span>
-                                            <span className="font-bold text-text-primary text-sm">{r.username}</span>
-                                            {r.is_live && <span className="text-[8px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase animate-pulse">Live</span>}
+                                    <div key={idx} className="flex justify-between items-center p-2 md:p-3 bg-white/3 rounded-lg md:rounded-xl border border-white/5 hover:border-accent-gold/20 transition-all">
+                                        <div className="flex items-center gap-2 md:gap-3">
+                                            <span className="text-[9px] md:text-[10px] font-black text-text-secondary/30 w-3 md:w-4">{idx + 1}</span>
+                                            <span className="font-bold text-text-primary text-xs md:text-sm">{r.username}</span>
+                                            {r.is_live && <span className="text-[7px] md:text-[8px] bg-emerald-500 text-white px-1 md:px-1.5 py-0.5 rounded-full font-black uppercase animate-pulse">Live</span>}
                                         </div>
-                                        <div>
-                                            <span className="font-black text-accent-primary">{r.score}</span>
-                                            <span className="text-[8px] text-text-secondary/40 uppercase font-black tracking-widest ml-1">Lines</span>
+                                        <div className="flex items-center gap-1">
+                                            <span className="font-black text-accent-primary text-sm md:text-base">{r.score}</span>
+                                            <span className="text-[7px] md:text-[8px] text-text-secondary/40 uppercase font-black tracking-widest">Lines</span>
                                         </div>
                                     </div>
                                 ))}
@@ -196,20 +196,20 @@ function LeaderboardContent() {
 
                     <GlassCard className="border-white/5">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 mb-4 flex items-center gap-2">
-                            <span>📜</span> Mastery Progress
+                            <span>📜</span> Mastery
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {sourceData.progress.length === 0 ? (
                                 <div className="col-span-2 text-center py-8 text-text-secondary/30 italic text-xs">No progress yet</div>
                             ) : sourceData.progress.map((r, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-3 bg-white/3 rounded-xl border border-white/5">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-[10px] font-black text-text-secondary/30 w-4">{idx + 1}</span>
-                                        <span className="font-bold text-text-primary text-sm">{r.username}</span>
+                                <div key={idx} className="flex justify-between items-center p-2 md:p-3 bg-white/3 rounded-lg md:rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-2 md:gap-3">
+                                        <span className="text-[9px] md:text-[10px] font-black text-text-secondary/30 w-3 md:w-4">{idx + 1}</span>
+                                        <span className="font-bold text-text-primary text-xs md:text-sm">{r.username}</span>
                                     </div>
-                                    <div>
-                                        <span className="font-black text-emerald-500">{r.score}</span>
-                                        <span className="text-[8px] text-emerald-500/40 uppercase font-black tracking-widest ml-1">Learned</span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="font-black text-emerald-500 text-sm md:text-base">{r.score}</span>
+                                        <span className="text-[7px] md:text-[8px] text-emerald-500/40 uppercase font-black tracking-widest">Learned</span>
                                     </div>
                                 </div>
                             ))}

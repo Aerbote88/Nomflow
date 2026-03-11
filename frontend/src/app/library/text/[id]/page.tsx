@@ -118,8 +118,8 @@ export default function TextDetailPage() {
     if (!data) return null;
 
     return (
-        <div className="max-w-[1000px] mx-auto py-8 px-4 md:px-6">
-            <header className="mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6">
+            <header className="mb-6 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div className="flex items-center gap-4 mb-4">
                     <Link href="/library">
                         <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-text-secondary hover:text-accent-primary hover:border-accent-primary/30 transition-all group">
@@ -133,7 +133,7 @@ export default function TextDetailPage() {
                     </div>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-display font-bold text-text-primary tracking-tight">
+                <h1 className="text-2xl md:text-5xl font-display font-bold text-text-primary tracking-tight">
                     {data.text_title}
                 </h1>
                 <p className="text-text-secondary italic mt-2 opacity-60 text-lg">

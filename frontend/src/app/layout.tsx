@@ -38,7 +38,7 @@ export default function RootLayout({
       <body className="antialiased font-outfit">
         <div id="app-background"></div>
         <div id="page-scroller">
-          <div className="main-wrapper container mx-auto px-4 pb-4 pt-4 md:p-8 w-full max-w-6xl">
+          <div className="main-wrapper container mx-auto px-4 pb-4 pt-2 md:pt-4 md:px-8 md:pb-8 w-full max-w-6xl">
             <Navbar />
             {children}
           </div>

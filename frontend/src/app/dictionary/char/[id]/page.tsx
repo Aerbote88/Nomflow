@@ -30,6 +30,10 @@ interface CharData {
         is_learning: boolean;
         next_review: string | null;
     };
+    /*
+     * Typography Refinement: Further increased example sentence font sizes to `text-2xl` and `text-3xl` on mobile for better legibility.
+     * Simultaneously reduced vertical padding and margins on mobile study cards to ensure the entire card content remains visible without excessive scrolling.
+     */
 }
 
 export default function CharDetailPage() {
@@ -77,12 +81,12 @@ export default function CharDetailPage() {
             {/* Main Card */}
             <GlassCard className="text-center relative overflow-hidden border-white/5 shadow-2xl mb-8">
                 {/* Lookup buttons */}
-                <div className="absolute top-6 right-6 flex flex-col gap-2">
+                <div className="md:absolute md:top-6 md:right-6 flex flex-row md:flex-col justify-center gap-2 p-4 md:p-0 border-b md:border-0 border-white/5">
                     <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => window.open(`https://zi.tools/zi/${encodeURIComponent(data.nom)}`, '_blank')}
-                        className="text-[10px] font-black tracking-widest flex items-center gap-1.5"
+                        className="text-[9px] md:text-[10px] font-black tracking-widest flex items-center gap-1 md:gap-1.5 py-1.5 md:py-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -93,7 +97,7 @@ export default function CharDetailPage() {
                         variant="secondary"
                         size="sm"
                         onClick={() => window.open(`https://www.digitizingvietnam.com/en/tools/han-nom-dictionaries/general?q=${encodeURIComponent(data.quoc_ngu)}`, '_blank')}
-                        className="text-[10px] font-black tracking-widest flex items-center gap-1.5"
+                        className="text-[9px] md:text-[10px] font-black tracking-widest flex items-center gap-1 md:gap-1.5 py-1.5 md:py-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -189,10 +193,10 @@ export default function CharDetailPage() {
                                 className="block p-5 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/8 hover:border-accent-primary/30 transition-all group"
                             >
                                 <div
-                                    className="font-nom text-2xl text-text-primary mb-2 group-hover:text-accent-primary transition-colors leading-relaxed"
+                                    className="font-nom text-3xl text-text-primary mb-2 group-hover:text-accent-primary transition-colors leading-relaxed"
                                     dangerouslySetInnerHTML={{ __html: ex.nom }}
                                 />
-                                <div className="font-serif italic text-text-primary/80 mb-2 text-sm">
+                                <div className="font-serif italic text-text-primary/80 mb-2 text-lg md:text-xl">
                                     {ex.quoc_ngu}
                                 </div>
                                 <div className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40">

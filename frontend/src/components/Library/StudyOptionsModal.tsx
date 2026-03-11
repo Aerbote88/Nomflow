@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { GlassCard, Button } from '@/components/ui';
+import { GlassCard, Button, Portal } from '@/components/ui';
 
 interface StudyOptionsModalProps {
     isOpen: boolean;
@@ -79,7 +79,8 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-300">
+        <Portal>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
 
             <GlassCard className="w-full max-w-[500px] relative z-10 border-accent-primary/20 p-8 shadow-2xl animate-in zoom-in-95 duration-300">
@@ -135,5 +136,6 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
                 </div>
             </GlassCard>
         </div>
+        </Portal>
     );
 };

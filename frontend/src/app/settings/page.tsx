@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import { GlassCard, Button } from '@/components/ui';
+import { GlassCard, Button, Portal } from '@/components/ui';
 
 interface User {
     id: number;
@@ -177,10 +177,9 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="flex flex-col items-center py-8 px-4 max-w-2xl mx-auto fade-in-stable">
-            <header className="text-center mb-12">
-                <h1 className="text-4xl font-bold font-display text-text-primary mb-2">Settings</h1>
-                <p className="text-text-secondary">Customizing your scholarship</p>
+        <div className="flex flex-col items-center py-4 md:py-8 px-4 max-w-2xl mx-auto fade-in-stable">
+            <header className="text-center mb-6 md:mb-12">
+                <h1 className="text-2xl md:text-4xl font-bold font-display text-text-primary mb-0">Settings</h1>
             </header>
 
             {saveStatus && (
@@ -318,41 +317,45 @@ export default function SettingsPage() {
 
             {/* Reset Modal */}
             {resetModalOpen && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-                    <GlassCard className="max-w-md border-red-500 shadow-2xl">
-                        <h3 className="text-2xl font-bold text-red-500 font-display mb-4">Confirm Reset</h3>
-                        <p className="text-sm text-text-secondary mb-8 leading-relaxed">
-                            This will completely wipe your study records and set all characters back to "New". This action cannot be undone.
-                        </p>
-                        <div className="flex gap-4">
-                            <Button variant="ghost" className="flex-1" onClick={() => setResetModalOpen(false)}>Cancel</Button>
-                            <Button className="flex-1 bg-red-600 hover:bg-red-500" onClick={handleResetProgress}>Reset Everything</Button>
-                        </div>
-                    </GlassCard>
-                </div>
+                <Portal>
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+                        <GlassCard className="max-w-md border-red-500 shadow-2xl">
+                            <h3 className="text-2xl font-bold text-red-500 font-display mb-4">Confirm Reset</h3>
+                            <p className="text-sm text-text-secondary mb-8 leading-relaxed">
+                                This will completely wipe your study records and set all characters back to "New". This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
+                                <Button variant="ghost" className="flex-1" onClick={() => setResetModalOpen(false)}>Cancel</Button>
+                                <Button className="flex-1 bg-red-600 hover:bg-red-500" onClick={handleResetProgress}>Reset Everything</Button>
+                            </div>
+                        </GlassCard>
+                    </div>
+                </Portal>
             )}
 
             {/* Delete Modal */}
             {deleteModalOpen && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-                    <GlassCard className="max-w-md border-red-700 shadow-2xl">
-                        <h3 className="text-2xl font-bold text-red-600 font-display mb-2">Delete Account</h3>
-                        <p className="text-sm text-text-secondary mb-6">Type <span className="text-text-primary font-black uppercase">DELETE</span> to confirm.</p>
+                <Portal>
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+                        <GlassCard className="max-w-md border-red-700 shadow-2xl">
+                            <h3 className="text-2xl font-bold text-red-600 font-display mb-2">Delete Account</h3>
+                            <p className="text-sm text-text-secondary mb-6">Type <span className="text-text-primary font-black uppercase">DELETE</span> to confirm.</p>
 
-                        <input
-                            type="text"
-                            value={deleteInput}
-                            onChange={(e) => setDeleteInput(e.target.value.toUpperCase())}
-                            className="w-full bg-white/5 border border-red-500/30 rounded-xl px-4 py-4 text-center text-xl font-black text-red-500 mb-8 outline-none focus:border-red-500"
-                            placeholder="Type here..."
-                        />
+                            <input
+                                type="text"
+                                value={deleteInput}
+                                onChange={(e) => setDeleteInput(e.target.value.toUpperCase())}
+                                className="w-full bg-white/5 border border-red-500/30 rounded-xl px-4 py-4 text-center text-xl font-black text-red-500 mb-8 outline-none focus:border-red-500"
+                                placeholder="Type here..."
+                            />
 
-                        <div className="flex gap-4">
-                            <Button variant="ghost" className="flex-1" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
-                            <Button className="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-20" disabled={deleteInput !== 'DELETE'} onClick={handleDeleteAccount}>Permanently Delete</Button>
-                        </div>
-                    </GlassCard>
-                </div>
+                            <div className="flex gap-4">
+                                <Button variant="ghost" className="flex-1" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
+                                <Button className="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-20" disabled={deleteInput !== 'DELETE'} onClick={handleDeleteAccount}>Permanently Delete</Button>
+                            </div>
+                        </GlassCard>
+                    </div>
+                </Portal>
             )}
         </div>
     );

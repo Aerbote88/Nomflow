@@ -48,17 +48,20 @@ function StudyContent() {
     const customParams = searchParams.get('custom_params');
     const count = searchParams.get('count') || '5';
 
-    const [currentUser] = useState<string>(() => localStorage.getItem('username') || 'anon');
+    const [currentUser, setCurrentUser] = useState<string>('anon');
 
     // Purge study sessions from other users on mount
     useEffect(() => {
-        const prefix = `study_session_${currentUser}_`;
+        const user = localStorage.getItem('username') || 'anon';
+        setCurrentUser(user);
+        
+        const prefix = `study_session_${user}_`;
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('study_session_') && !key.startsWith(prefix)) {
                 localStorage.removeItem(key);
             }
         });
-    }, [currentUser]);
+    }, []);
 
     // Generate a unique session key scoped to the current user
     const sessionKey = `study_session_${currentUser}_${mode}_${listId || 'none'}_${textId || 'none'}_${customParams || 'none'}`;
@@ -330,7 +333,7 @@ function StudyContent() {
         : `Remaining: ${queue.length + 1}`;
 
     return (
-        <div className="flex flex-col items-center py-2 md:py-8">
+        <div className="flex flex-col items-center py-1 md:py-8">
             <StudyHeader
                 mode={mode}
                 progress={progressText}
@@ -357,7 +360,7 @@ function StudyContent() {
                 isPractice={mode === 'random'}
             />
 
-            <div className="flex gap-3 mt-6 w-full max-w-[600px]">
+            <div className="flex gap-3 mt-4 md:mt-6 w-full max-w-[600px]">
                 <button
                     onClick={handleUndo}
                     disabled={!canUndo}

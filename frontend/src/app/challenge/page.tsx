@@ -218,45 +218,45 @@ function ChallengePage() {
     if (phase === 'mode_select') {
         return (
             <div className="flex items-center justify-center min-h-[70vh] px-4">
-                <GlassCard className="w-full max-w-md p-10 border-accent-primary/20 shadow-2xl animate-in zoom-in-95 duration-300">
-                    <div className="text-center mb-8">
+                <GlassCard className="w-full max-w-md p-6 md:p-10 border-accent-primary/20 shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="text-center mb-6 md:mb-8">
                         <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">Chronicle Challenge</div>
-                        <h2 className="text-3xl font-display font-bold text-text-primary">Choose Your Path</h2>
-                        <p className="text-xs text-text-secondary mt-2 opacity-60">{lines.length} lines loaded</p>
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary">Choose Your Path</h2>
+                        <p className="text-[10px] md:text-xs text-text-secondary mt-2 opacity-60">{lines.length} lines loaded</p>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 md:gap-3">
                         <button
                             onClick={() => checkForSavedSession('normal')}
-                            className="text-left p-5 border-2 border-white/10 hover:border-amber-500/50 hover:bg-amber-500/5 rounded-2xl transition-all group"
+                            className="text-left p-4 md:p-5 border-2 border-white/10 hover:border-amber-500/50 hover:bg-amber-500/5 rounded-2xl transition-all group"
                         >
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-black text-text-primary uppercase tracking-widest text-xs group-hover:text-amber-600 transition-colors">Normal Mode</span>
-                                <span className="px-2 py-0.5 bg-amber-100/20 text-amber-600 text-[9px] rounded font-black uppercase">Progression</span>
+                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-amber-600 transition-colors">Normal Mode</span>
+                                <span className="px-2 py-0.5 bg-amber-100/20 text-amber-600 text-[8px] md:text-[9px] rounded font-black uppercase">Progression</span>
                             </div>
-                            <p className="text-[11px] text-text-secondary opacity-70">Mistakes won't end your run. Best for learning.</p>
+                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">Mistakes won't end your run. Best for learning.</p>
                         </button>
 
                         <button
                             onClick={() => checkForSavedSession('sudden_death')}
-                            className="text-left p-5 border-2 border-white/10 hover:border-red-500/50 hover:bg-red-500/5 rounded-2xl transition-all group"
+                            className="text-left p-4 md:p-5 border-2 border-white/10 hover:border-red-500/50 hover:bg-red-500/5 rounded-2xl transition-all group"
                         >
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-black text-text-primary uppercase tracking-widest text-xs group-hover:text-red-500 transition-colors">Sudden Death</span>
-                                <span className="px-2 py-0.5 bg-red-100/20 text-red-500 text-[9px] rounded font-black uppercase">High Stakes</span>
+                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-red-500 transition-colors">Sudden Death</span>
+                                <span className="px-2 py-0.5 bg-red-100/20 text-red-500 text-[8px] md:text-[9px] rounded font-black uppercase">High Stakes</span>
                             </div>
-                            <p className="text-[11px] text-text-secondary opacity-70">One mistake ends the run. Compete on the leaderboard.</p>
+                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">One mistake ends the run. Compete on the leaderboard.</p>
                         </button>
 
                         <button
                             onClick={() => checkForSavedSession('practice')}
-                            className="text-left p-5 border-2 border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl transition-all group"
+                            className="text-left p-4 md:p-5 border-2 border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl transition-all group"
                         >
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-black text-text-primary uppercase tracking-widest text-xs group-hover:text-blue-500 transition-colors">Practice Mode</span>
-                                <span className="px-2 py-0.5 bg-blue-100/20 text-blue-500 text-[9px] rounded font-black uppercase">No Limits</span>
+                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-blue-500 transition-colors">Practice Mode</span>
+                                <span className="px-2 py-0.5 bg-blue-100/20 text-blue-500 text-[8px] md:text-[9px] rounded font-black uppercase">No Limits</span>
                             </div>
-                            <p className="text-[11px] text-text-secondary opacity-70">Pick any line to start from. No leaderboard tracking.</p>
+                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">Pick any line to start from. No leaderboard tracking.</p>
                         </button>
                     </div>
 
@@ -273,10 +273,10 @@ function ChallengePage() {
     if (phase === 'line_select') {
         return (
             <div className="flex items-center justify-center min-h-[70vh] px-4">
-                <GlassCard className="w-full max-w-md p-10 border-blue-500/30 shadow-2xl animate-in zoom-in-95 duration-300">
-                    <div className="text-center mb-8">
-                        <h2 className="text-3xl font-display font-bold text-text-primary mb-2">Select Starting Line</h2>
-                        <p className="text-xs text-text-secondary opacity-60">Line 1 to {lines.length}</p>
+                <GlassCard className="w-full max-w-md p-6 md:p-10 border-blue-500/30 shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="text-center mb-6 md:mb-8">
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary mb-2">Select Starting Line</h2>
+                        <p className="text-[10px] md:text-xs text-text-secondary opacity-60">Line 1 to {lines.length}</p>
                     </div>
                     <input
                         type="number"
@@ -284,7 +284,7 @@ function ChallengePage() {
                         onChange={(e) => setPracticeStart(e.target.value)}
                         min={1}
                         max={lines.length}
-                        className="w-full bg-white/5 border-b-2 border-blue-500/30 focus:border-blue-500 text-center text-5xl font-display font-bold py-4 outline-none transition text-text-primary mb-8"
+                        className="w-full bg-white/5 border-b-2 border-blue-500/30 focus:border-blue-500 text-center text-4xl md:text-5xl font-display font-bold py-3 md:py-4 outline-none transition text-text-primary mb-6 md:mb-8"
                     />
                     <div className="flex flex-col gap-3">
                         <Button className="w-full py-4 bg-blue-600 hover:bg-blue-500" onClick={confirmPracticeStart}>
@@ -305,17 +305,17 @@ function ChallengePage() {
     if (phase === 'resume_prompt') {
         return (
             <div className="flex items-center justify-center min-h-[70vh] px-4">
-                <GlassCard className="w-full max-w-md p-10 border-accent-primary/30 shadow-2xl animate-in zoom-in-95 duration-300">
-                    <div className="text-center mb-8">
-                        <div className="text-4xl mb-4">📜</div>
-                        <h2 className="text-3xl font-display font-bold text-text-primary mb-4">Saved Session Found</h2>
-                        <p className="text-text-secondary leading-relaxed">
+                <GlassCard className="w-full max-w-md p-6 md:p-10 border-accent-primary/30 shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="text-center mb-6 md:mb-8">
+                        <div className="text-3xl md:text-4xl mb-3 md:mb-4">📜</div>
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary mb-3 md:mb-4">Saved Session Found</h2>
+                        <p className="text-sm md:text-base text-text-secondary leading-relaxed">
                             You were on line <span className="font-black text-accent-primary">{savedIndex + 1}</span> in{' '}
                             <span className="font-black text-text-primary">{modeLabel}</span>. Resume?
                         </p>
                     </div>
-                    <div className="flex flex-col gap-3">
-                        <Button className="w-full py-4" onClick={resumeGame}>
+                    <div className="flex flex-col gap-2 md:gap-3">
+                        <Button className="w-full py-3 md:py-4 text-xs md:text-sm font-black uppercase tracking-widest" onClick={resumeGame}>
                             Resume Session
                         </Button>
                         <button
@@ -333,15 +333,15 @@ function ChallengePage() {
     if (phase === 'game_over') {
         return (
             <div className="flex items-center justify-center min-h-[70vh] px-4">
-                <GlassCard className="w-full max-w-md p-10 text-center shadow-2xl animate-in zoom-in-95 duration-300">
-                    <div className="text-5xl mb-6">{gameOverWin ? '🏆' : '💀'}</div>
-                    <h2 className={`text-4xl font-display font-bold mb-4 ${gameOverWin ? 'text-emerald-500' : 'text-red-500'}`}>
+                <GlassCard className="w-full max-w-md p-6 md:p-10 text-center shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="text-4xl md:text-5xl mb-4 md:mb-6">{gameOverWin ? '🏆' : '💀'}</div>
+                    <h2 className={`text-3xl md:text-4xl font-display font-bold mb-3 md:mb-4 ${gameOverWin ? 'text-emerald-500' : 'text-red-500'}`}>
                         {gameOverWin ? 'Text Complete!' : 'Game Over!'}
                     </h2>
-                    <p className="text-text-secondary mb-2">
+                    <p className="text-xs md:text-base text-text-secondary mb-1 md:mb-2">
                         {mode === 'practice' ? 'You reached line' : 'You made it to line'}
                     </p>
-                    <p className="text-6xl font-black text-accent-primary mb-8">{score}</p>
+                    <p className="text-5xl md:text-6xl font-black text-accent-primary mb-6 md:mb-8">{score}</p>
 
                     {!gameOverWin && mode === 'sudden_death' && (
                         <div className="mb-8 p-4 bg-white/5 rounded-2xl border border-white/10 text-left">
@@ -369,66 +369,66 @@ function ChallengePage() {
     if (!currentLine) return null;
 
     return (
-        <div className="flex flex-col items-center py-4 md:py-8 max-w-2xl mx-auto px-4 animate-in fade-in duration-300">
+        <div className="flex flex-col items-center py-2 md:py-8 max-w-2xl mx-auto px-4 animate-in fade-in duration-300">
             {/* Header */}
-            <div className="w-full flex justify-between items-center mb-8">
+            <div className="w-full flex justify-between items-center mb-4 md:mb-8">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={pauseAndExit}
-                        className="flex items-center gap-2 text-[10px] font-black text-text-secondary/50 uppercase tracking-widest hover:text-text-secondary transition-colors"
+                        className="flex items-center gap-1.5 text-[9px] md:text-[10px] font-black text-text-secondary/50 uppercase tracking-widest hover:text-text-secondary transition-colors"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Pause & Exit
+                        Pause
                     </button>
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${modeColor} bg-current/10`}
+                    <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest ${modeColor} bg-current/10`}
                         style={{ backgroundColor: 'transparent' }}>
                         <span className={modeColor}>{modeLabel}</span>
                     </span>
                 </div>
                 <div className="text-right">
-                    <p className="text-[10px] text-text-secondary uppercase tracking-widest font-black">
+                    <p className="text-[9px] md:text-[10px] text-text-secondary uppercase tracking-widest font-black">
                         {mode === 'normal' ? 'Progress' : mode === 'practice' ? 'Line' : 'Streak'}
                     </p>
-                    <p className="text-4xl font-black text-accent-primary leading-none">
+                    <p className="text-3xl md:text-4xl font-black text-accent-primary leading-none">
                         {mode === 'practice' ? currentIndex + 1 : score}
                     </p>
                 </div>
             </div>
 
             {/* Main Card */}
-            <GlassCard className="w-full text-center py-12 px-8 mb-6 shadow-2xl">
-                <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-6">
+            <GlassCard className="w-full text-center py-8 md:py-12 px-6 md:px-8 mb-4 md:mb-6 shadow-2xl">
+                <p className="text-[9px] md:text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4 md:mb-6">
                     Line {currentIndex + 1} of {lines.length}
                 </p>
 
-                <div className="font-nom text-6xl md:text-7xl text-text-primary leading-none mb-8">
+                <div className="font-nom text-5xl md:text-7xl text-text-primary leading-none mb-6 md:mb-8">
                     {currentLine.nom}
                 </div>
 
                 {/* Lookup links — only for single characters */}
                 {currentLine.nom.length === 1 && (
-                    <div className="flex gap-6 justify-center mb-8">
+                    <div className="flex gap-4 md:gap-6 justify-center mb-6 md:mb-8">
                         <a
                             href={`https://zi.tools/zi/${encodeURIComponent(currentLine.nom)}`}
                             target="_blank"
-                            className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 hover:text-accent-primary transition-colors flex items-center gap-1"
+                            className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary/40 hover:text-accent-primary transition-colors flex items-center gap-1 md:gap-1"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
-                            Nôm (zi.tools)
+                            zi.tools
                         </a>
                         <a
                             href={`https://www.digitizingvietnam.com/en/tools/han-nom-dictionaries/general?q=${encodeURIComponent(currentLine.quoc_ngu)}`}
                             target="_blank"
-                            className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 hover:text-accent-primary transition-colors flex items-center gap-1"
+                            className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary/40 hover:text-accent-primary transition-colors flex items-center gap-1 md:gap-1"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
-                            Quốc Ngữ (DVN)
+                            Hán-Nôm
                         </a>
                     </div>
                 )}
@@ -464,14 +464,14 @@ function ChallengePage() {
 
                 {/* Controls */}
                 {feedback && !feedback.correct ? (
-                    <Button onClick={retryLine} variant="secondary" className="px-10 py-4 text-sm">
+                    <Button onClick={retryLine} variant="secondary" className="px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm font-black uppercase tracking-widest">
                         Try Again
                     </Button>
                 ) : (
                     <Button
                         onClick={submitAnswer}
                         disabled={!userAnswer.trim() || !!feedback}
-                        className="px-10 py-4 text-sm shadow-lg shadow-accent-primary/20"
+                        className="px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm shadow-lg shadow-accent-primary/20 font-black uppercase tracking-widest"
                     >
                         Submit Answer
                     </Button>

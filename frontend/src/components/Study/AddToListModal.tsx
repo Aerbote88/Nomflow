@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Button, GlassCard } from '@/components/ui';
+import { Button, GlassCard, Portal } from '@/components/ui';
 
 interface List {
     id: number;
@@ -58,7 +58,8 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <Portal>
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
             <GlassCard className="w-full max-w-md !p-6 border-accent-primary/20 shadow-2xl relative animate-in zoom-in-95 duration-200">
                 <button
                     onClick={onClose}
@@ -124,5 +125,6 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                 </div>
             </GlassCard>
         </div>
+        </Portal>
     );
 }

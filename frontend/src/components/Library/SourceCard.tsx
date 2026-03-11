@@ -62,7 +62,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
                     )}
 
                     {description && (
-                        <p className="text-sm font-serif text-text-secondary line-clamp-2 leading-relaxed opacity-80 mt-2">
+                        <p className="hidden md:block text-sm font-serif text-text-secondary line-clamp-2 leading-relaxed opacity-80 mt-2">
                             {description}
                         </p>
                     )}

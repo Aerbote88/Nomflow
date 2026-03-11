@@ -14,8 +14,18 @@ from .main import get_session # Circular import? Avoid. Pass session to dep.
 # Currently everything is in main.py. I should probably move database init to database.py
 # but for now I will duplicate or just pass session.
 
+from dotenv import load_dotenv
+
 # Logic configuration
-SECRET_KEY = os.environ["SECRET_KEY"]
+load_dotenv()
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    # Fallback to a development key if not found, or raise a better error
+    # but for security in production, it should be set.
+    # For now, let's just make it NOT crash the whole app on load if we can help it, 
+    # but JWT will fail. Actually, it's better to crash with a clear message.
+    raise RuntimeError("SECRET_KEY environment variable is not set in .env")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30000 # Long expiry for demo
 

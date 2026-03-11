@@ -75,8 +75,8 @@ export default function ListDetailPage() {
     if (!data) return null;
 
     return (
-        <div className="max-w-[1000px] mx-auto py-8 px-4 md:px-6">
-            <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6">
+            <header className="mb-6 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div>
                     <div className="flex items-center gap-4 mb-4">
                         <Link href="/library">
@@ -91,7 +91,7 @@ export default function ListDetailPage() {
                         </div>
                     </div>
 
-                    <h1 className="text-4xl md:text-5xl font-display font-bold text-text-primary tracking-tight">
+                    <h1 className="text-2xl md:text-5xl font-display font-bold text-text-primary tracking-tight">
                         {data.name}
                     </h1>
                     {data.description && (

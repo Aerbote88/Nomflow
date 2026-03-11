@@ -65,25 +65,25 @@ export default function VocabPage() {
     }
 
     return (
-        <div className="max-w-[1000px] mx-auto py-8 px-4 md:px-6 fade-in-stable">
-            <header className="mb-12">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 fade-in-stable">
+            <header className="mb-6 md:mb-12">
                 <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">Your Archive</div>
-                <h1 className="text-5xl md:text-6xl font-display font-bold text-text-primary tracking-tight">Flashcards</h1>
+                <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">Flashcards</h1>
             </header>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-                <GlassCard className="!p-4 md:!p-6 text-center">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Total</div>
-                    <div className="text-3xl font-black text-text-primary">{stats.total}</div>
+            <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+                <GlassCard className="!p-3 md:!p-6 text-center">
+                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Total</div>
+                    <div className="text-xl md:text-3xl font-black text-text-primary">{stats.total}</div>
                 </GlassCard>
-                <GlassCard className="!p-4 md:!p-6 text-center">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learning</div>
-                    <div className="text-3xl font-black text-amber-500">{stats.learning}</div>
+                <GlassCard className="!p-3 md:!p-6 text-center">
+                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learning</div>
+                    <div className="text-xl md:text-3xl font-black text-amber-500">{stats.learning}</div>
                 </GlassCard>
-                <GlassCard className="!p-4 md:!p-6 text-center">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learned</div>
-                    <div className="text-3xl font-black text-emerald-500">{stats.learned}</div>
+                <GlassCard className="!p-3 md:!p-6 text-center">
+                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learned</div>
+                    <div className="text-xl md:text-3xl font-black text-emerald-500">{stats.learned}</div>
                 </GlassCard>
             </div>
 
@@ -98,14 +98,14 @@ export default function VocabPage() {
                         placeholder="Search Nôm or Quốc Ngữ..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary font-medium placeholder:text-text-secondary/30 outline-none focus:border-accent-primary/50 transition-colors"
+                        className="w-full pl-11 pr-4 py-2 md:py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary font-medium placeholder:text-text-secondary/30 outline-none focus:border-accent-primary/50 transition-colors text-sm md:text-base"
                     />
                 </div>
                 <div className="relative w-full md:w-44">
                     <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value as 'all' | 'character' | 'line')}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary font-bold appearance-none outline-none focus:border-accent-primary/50 transition-colors cursor-pointer"
+                        className="w-full px-4 py-2 md:py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary font-bold appearance-none outline-none focus:border-accent-primary/50 transition-colors cursor-pointer text-sm md:text-base"
                     >
                         <option value="all" className="bg-bg-primary">All Types</option>
                         <option value="character" className="bg-bg-primary">Characters</option>
@@ -129,10 +129,10 @@ export default function VocabPage() {
                     <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-bg-secondary/80 backdrop-blur-md border-b border-white/10">
-                                <th className="px-6 py-4 font-black text-[10px] uppercase tracking-widest text-text-secondary">Nôm</th>
-                                <th className="px-6 py-4 font-black text-[10px] uppercase tracking-widest text-text-secondary">Quốc Ngữ</th>
-                                <th className="px-6 py-4 font-black text-[10px] uppercase tracking-widest text-text-secondary">Status</th>
-                                <th className="px-6 py-4 font-black text-[10px] uppercase tracking-widest text-text-secondary">Next Due</th>
+                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Nôm</th>
+                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Quốc Ngữ</th>
+                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary hidden sm:table-cell">Status</th>
+                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Next Due</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -149,28 +149,28 @@ export default function VocabPage() {
                                         className="group hover:bg-white/5 transition-colors cursor-pointer"
                                         onClick={() => router.push(`/dictionary/${item.item_type}/${item.content_id}`)}
                                     >
-                                        <td className="px-6 py-4">
-                                            <span className="font-nom text-2xl text-text-primary group-hover:text-accent-primary transition-colors">
+                                        <td className="px-3 md:px-6 py-3 md:py-4">
+                                            <span className="font-nom text-xl md:text-2xl text-text-primary group-hover:text-accent-primary transition-colors">
                                                 {item.nom}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="font-serif italic text-text-primary/80 font-semibold">
+                                        <td className="px-3 md:px-6 py-3 md:py-4">
+                                            <span className="font-serif italic text-text-primary/80 font-semibold text-sm md:text-base">
                                                 {item.quoc_ngu}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
                                             {item.is_learning ? (
-                                                <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-widest rounded-md border border-amber-500/20">
+                                                <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-amber-500/20">
                                                     Learning
                                                 </span>
                                             ) : (
-                                                <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-md border border-emerald-500/20">
+                                                <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-emerald-500/20">
                                                     Learned
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-text-secondary/60 font-medium">
+                                        <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-text-secondary/60 font-medium">
                                             {formatDate(item.next_review_due)}
                                         </td>
                                     </tr>

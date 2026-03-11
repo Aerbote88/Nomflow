@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { Portal } from '@/components/ui';
 
 interface OnboardingModalProps {
     isOpen: boolean;
@@ -15,8 +16,7 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
 
     if (!isOpen) return null;
 
-    const selectPath = async (type: 'text', id?: number) => {
-        if (!id) return;
+    const handleSelection = async (id: number, type: 'curriculum' | 'text') => {
         setSaving(true);
         try {
             const settings = await apiFetch<{ daily_new_limit: number }>('settings');
@@ -24,7 +24,8 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
                 method: 'POST',
                 body: JSON.stringify({
                     daily_new_limit: settings.daily_new_limit || 10,
-                    active_text_id: id,
+                    active_text_id: type === 'text' ? id : null,
+                    curriculum_id: type === 'curriculum' ? id : null,
                     active_list_id: null,
                 }),
             });
@@ -36,61 +37,52 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
         }
     };
 
-    const paths = [
-        {
-            id: curriculumId,
-            icon: '📜',
-            title: 'Standard Nôm Curriculum',
-            description: 'A structured path through the official standard curriculum. Recommended for all learners.',
-            cta: 'Start Learning',
-        },
-        {
-            id: kieuId,
-            icon: '🪕',
-            title: 'Truyện Kiều',
-            description: 'Dive straight into the greatest masterpiece of Vietnamese literature. Learn by reading.',
-            cta: 'Read the Classics',
-        },
-    ];
-
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-2xl bg-bg-primary border border-accent-gold/30 rounded-3xl p-8 md:p-12 text-center shadow-2xl animate-in zoom-in-95 duration-300">
-                <div className="text-xs font-black text-accent-primary uppercase tracking-[0.3em] mb-3">
-                    Welcome to NômFlow
-                </div>
-                <h2 className="text-3xl md:text-4xl font-display font-bold text-text-primary mb-3">
-                    Choose Your Path
-                </h2>
-                <p className="text-text-secondary text-sm md:text-base mb-10 max-w-md mx-auto leading-relaxed">
-                    How would you like to begin your learning journey?
-                </p>
+        <Portal>
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                <div className="w-full max-w-2xl bg-bg-primary border border-accent-gold/30 rounded-3xl p-8 md:p-12 text-center shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="text-xs font-black text-accent-primary uppercase tracking-[0.3em] mb-3">
+                        Welcome to NômFlow
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-display font-bold text-text-primary mb-6">
+                        Ready to start your journey?
+                    </h2>
+                    <p className="text-text-secondary mb-12 text-lg leading-relaxed max-w-md mx-auto">
+                        Pick a classic text or a curriculum and start mastering Nôm today.
+                    </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {paths.map(path => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <button
-                            key={path.title}
-                            onClick={() => selectPath('text', path.id)}
-                            disabled={saving || !path.id}
-                            className="group text-left p-6 md:p-8 border-2 border-white/10 rounded-2xl bg-white/3 hover:bg-accent-primary/5 hover:border-accent-primary/50 transition-all duration-300 hover:-translate-y-1 disabled:opacity-40"
+                            onClick={() => handleSelection(curriculumId || 1, 'curriculum')}
+                            disabled={saving}
+                            className="p-8 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-accent-primary/50 transition-all group disabled:opacity-40"
                         >
-                            <div className="w-12 h-12 bg-accent-primary/10 rounded-xl flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
-                                {path.icon}
-                            </div>
-                            <h3 className="text-lg font-display font-bold text-text-primary mb-2">{path.title}</h3>
-                            <p className="text-sm text-text-secondary leading-relaxed mb-5">{path.description}</p>
-                            <div className="text-accent-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                {path.cta}
-                                <span className="group-hover:translate-x-1 transition-transform">→</span>
-                            </div>
+                            <span className="text-3xl mb-4 block group-hover:scale-110 transition-transform">🎓</span>
+                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Continue Curriculum</div>
+                            <p className="text-[10px] text-text-secondary opacity-60">Follow our structured learning path</p>
                         </button>
-                    ))}
-                </div>
 
-                <p className="mt-8 text-[10px] text-text-secondary/40 font-black uppercase tracking-widest">
-                    You can change your active source anytime in the Library.
-                </p>
+                        <button
+                            onClick={() => handleSelection(kieuId || 1, 'text')}
+                            disabled={saving}
+                            className="p-8 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-accent-gold/50 transition-all group disabled:opacity-40"
+                        >
+                            <span className="text-3xl mb-4 block group-hover:scale-110 transition-transform">📜</span>
+                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Study Kim Vân Kiều</div>
+                            <p className="text-[10px] text-text-secondary opacity-60">Learn the masterpiece of Vietnamese literature</p>
+                        </button>
+                    </div>
+
+                    <div className="mt-8">
+                        <button
+                            onClick={() => (window.location.href = '/library')}
+                            className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] hover:text-accent-primary transition-colors"
+                        >
+                            Or browse the library
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
+        </Portal>
     );
 }

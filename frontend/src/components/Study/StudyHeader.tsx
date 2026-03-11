@@ -10,7 +10,7 @@ interface StudyHeaderProps {
 
 export const StudyHeader: React.FC<StudyHeaderProps> = ({ mode, progress, title = "Study Session" }) => {
     return (
-        <div className="flex justify-between items-center mb-6 w-full max-w-[600px] mx-auto">
+        <div className="flex justify-between items-center mb-4 md:mb-6 w-full max-w-[600px] mx-auto">
             <div className="flex items-center gap-3">
                 <Link href="/dashboard">
                     <Button variant="ghost" size="sm" className="!px-2 !py-1 text-text-secondary hover:text-text-primary gap-1">
