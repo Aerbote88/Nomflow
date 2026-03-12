@@ -10,7 +10,7 @@ export function Footer() {
         <>
             <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
             <footer className="text-center py-8 px-4 mt-8 border-t border-accent-gold/10 text-text-secondary text-sm shrink-0">
-                <div className="mb-1 font-semibold">NômFlow v1.0</div>
+                <div className="mb-1 font-semibold">NômFlow — Beta Version 1.0</div>
                 <div className="opacity-80">
                     Created by{' '}
                     <a href="https://columbia.academia.edu/AlbertErrickson" target="_blank" rel="noopener noreferrer"
