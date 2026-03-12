@@ -59,9 +59,9 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
                 <div className="mt-4 flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 pointer-events-auto">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Session Size</span>
                     <div className="flex items-center gap-3">
-                        <button onClick={(e) => { e.stopPropagation(); setRandomCount(Math.max(5, randomCount - 5)); }} className="text-accent-primary p-1 hover:scale-125 transition-transform">-</button>
+                        <span role="button" onClick={(e) => { e.stopPropagation(); setRandomCount(Math.max(5, randomCount - 5)); }} className="text-accent-primary p-1 hover:scale-125 transition-transform cursor-pointer select-none">-</span>
                         <span className="text-sm font-black text-text-primary w-6 text-center">{randomCount}</span>
-                        <button onClick={(e) => { e.stopPropagation(); setRandomCount(Math.min(100, randomCount + 5)); }} className="text-accent-primary p-1 hover:scale-125 transition-transform">+</button>
+                        <span role="button" onClick={(e) => { e.stopPropagation(); setRandomCount(Math.min(100, randomCount + 5)); }} className="text-accent-primary p-1 hover:scale-125 transition-transform cursor-pointer select-none">+</span>
                     </div>
                 </div>
             ),
