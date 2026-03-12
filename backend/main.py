@@ -6,7 +6,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import selectinload, joinedload
 from typing import List, Optional
 from datetime import datetime, date, timedelta
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import os
 import json
 import unicodedata
@@ -18,6 +18,9 @@ import os
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from .backup_db import perform_backup
 
 from .database import get_session, create_db_and_tables
@@ -50,6 +53,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(lifespan=lifespan)
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS — allow requests from the frontend
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
@@ -172,6 +179,7 @@ class LoginResponse(BaseModel):
     username: str
 
 @app.post("/api/token", response_model=LoginResponse)
+@limiter.limit("10/minute")
 async def login_for_access_token(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.username == form_data.username)).first()
     if not user or not verify_password(form_data.password, user.password_hash):
@@ -181,7 +189,7 @@ async def login_for_access_token(request: Request, response: Response, form_data
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token_expires = timedelta(minutes=60 * 24 * 7) # 1 week
+    access_token_expires = timedelta(days=2)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
@@ -191,7 +199,7 @@ async def login_for_access_token(request: Request, response: Response, form_data
         httponly=True,
         secure=True,
         samesite="lax",
-        max_age=60 * 60 * 24 * 7,
+        max_age=60 * 60 * 24 * 2,
         path="/",
     )
     return {"username": user.username}
@@ -203,14 +211,15 @@ def logout():
     return response
 
 class RegisterRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(min_length=3, max_length=30)
+    password: str = Field(min_length=8)
     email: str
 
 RESERVED_USERNAMES = {"albert e"}
 
 @app.post("/api/register")
-def register(req: RegisterRequest, session: Session = Depends(get_session)):
+@limiter.limit("5/hour")
+def register(req: RegisterRequest, request: Request, session: Session = Depends(get_session)):
     if req.username.strip().lower() in RESERVED_USERNAMES:
         raise HTTPException(status_code=400, detail="Username already exists")
     existing = session.exec(select(User).where(User.username == req.username)).first()
@@ -352,7 +361,7 @@ class BrowseResponse(BaseModel):
     lines: List[dict]
 
 class SettingsUpdate(BaseModel):
-    daily_new_limit: int
+    daily_new_limit: int = Field(ge=1, le=200)
     active_list_id: Optional[int] = None
 
 class CreateListRequest(BaseModel):
@@ -374,21 +383,17 @@ def get_user_me(user: User = Depends(get_current_user)):
     return {
         "id": user.id,
         "username": user.username,
-        "display_name": user.display_name,
         "email": user.email,
         "is_admin": user.is_admin,
         "hide_from_leaderboard": user.hide_from_leaderboard
     }
 
 class UserSettingsUpdate(BaseModel):
-    display_name: Optional[str] = None
     email: Optional[str] = None
     hide_from_leaderboard: Optional[bool] = None
 
 @app.post("/api/user/settings")
 def update_user_settings(req: UserSettingsUpdate, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    if req.display_name is not None:
-        user.display_name = req.display_name.strip() or None
     if req.email is not None:
         clean_email = req.email.strip().lower() or None
         if clean_email:
@@ -1561,7 +1566,7 @@ def get_settings(user: User = Depends(get_current_user), session: Session = Depe
     return settings
 
 class SettingsUpdate(BaseModel):
-    daily_new_limit: int
+    daily_new_limit: int = Field(ge=1, le=200)
     active_list_id: Optional[int] = None
     active_text_id: Optional[int] = None
 

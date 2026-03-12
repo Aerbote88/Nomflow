@@ -48,7 +48,6 @@ interface LineData {
 interface UserInfo {
     id: number;
     username: string;
-    display_name: string;
     is_admin: boolean;
 }
 

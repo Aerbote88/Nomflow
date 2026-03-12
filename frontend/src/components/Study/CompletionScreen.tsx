@@ -29,7 +29,7 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({ isSRS }) => 
                             className="w-full shadow-lg shadow-accent-primary/20"
                             onClick={() => window.location.reload()}
                         >
-                            Another Random Session
+                            Go Again
                         </Button>
                         <Link href="/dashboard" className="w-full">
                             <Button size="lg" variant="secondary" className="w-full">

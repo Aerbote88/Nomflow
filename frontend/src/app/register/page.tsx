@@ -17,6 +17,11 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters.');
+            return;
+        }
+
         if (password !== confirmPassword) {
             setError('Passwords do not match.');
             return;
@@ -123,6 +128,7 @@ export default function RegisterPage() {
                             className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-text-primary font-black outline-none focus:border-accent-primary/50 focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/10"
                             placeholder="••••••••"
                         />
+                        <p className="text-[10px] text-text-secondary/40 mt-1.5 px-1">Minimum 8 characters</p>
                     </div>
 
                     <div>

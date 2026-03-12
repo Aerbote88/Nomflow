@@ -27,7 +27,7 @@ if not SECRET_KEY:
     # but JWT will fail. Actually, it's better to crash with a clear message.
     raise RuntimeError("SECRET_KEY environment variable is not set in .env")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30000 # Long expiry for demo
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 2  # 2 days
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
