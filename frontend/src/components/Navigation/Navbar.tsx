@@ -36,7 +36,7 @@ export function Navbar() {
     const navLinks = [
         { href: '/dashboard', label: 'Dashboard' },
         { href: '/library', label: 'Library' },
-        { href: '/vocab', label: 'Flashcards' },
+        { href: '/flashcards', label: 'Flashcards' },
         { href: '/leaderboard', label: 'Leaderboard' },
         { href: '/settings', label: 'Settings' },
     ];

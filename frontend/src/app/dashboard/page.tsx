@@ -204,7 +204,7 @@ export default function DashboardPage() {
                     <Button
                         variant="secondary"
                         className="flex flex-col py-3 md:py-8 group hover:border-accent-primary/50 hover:bg-accent-primary/5 transition-all duration-300"
-                        onClick={() => window.location.href = '/vocab'}
+                        onClick={() => window.location.href = '/flashcards'}
                     >
                         <span className="font-nom text-2xl md:text-4xl text-accent-primary mb-2 md:mb-3 group-hover:scale-110 transition-transform">𡨸</span>
                         <span className="uppercase tracking-[0.2em] text-[10px] font-black">My Flashcards</span>
