@@ -87,23 +87,23 @@ export default function DashboardPage() {
                             onClick={() => setIsStatsExpanded(true)}
                             className="w-full glass-card !p-3 flex justify-between items-center border-accent-primary/20 hover:border-accent-primary/50 transition-colors"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex flex-col items-center justify-center text-accent-primary border border-accent-gold/20">
+                            <div className="flex items-center justify-between w-full gap-2 md:gap-3 md:w-auto md:justify-start">
+                                <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex flex-col items-center justify-center text-accent-primary border border-accent-gold/20 flex-shrink-0">
                                     <span className="text-[7px] font-black uppercase leading-none mb-0.5 opacity-70">Lvl</span>
                                     <span className="text-sm font-bold leading-none">{stats.level}</span>
                                 </div>
-                                <div className="flex flex-col items-start translate-y-[1px]">
-                                    <span className="text-[9px] text-accent-primary uppercase font-black tracking-[0.2em] leading-none mb-2 opacity-80">Quick Stats</span>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex flex-col">
+                                <div className="flex flex-col items-start translate-y-[1px] flex-1 md:flex-none">
+                                    <span className="hidden md:block text-[9px] text-accent-primary uppercase font-black tracking-[0.2em] leading-none mb-2 opacity-80">Quick Stats</span>
+                                    <div className="flex items-center justify-around w-full md:justify-start md:gap-4">
+                                        <div className="flex flex-col items-center md:items-start">
                                             <span className="text-[7px] text-text-secondary uppercase font-black tracking-widest leading-none mb-1 opacity-60">Studying</span>
                                             <span className="text-xs font-bold text-text-primary capitalize truncate max-w-[80px]">{stats.active_source_name || "Idle"}</span>
                                         </div>
-                                        <div className="flex flex-col border-l border-white/10 pl-3">
+                                        <div className="flex flex-col items-center md:items-start md:border-l md:border-white/10 md:pl-3">
                                             <span className="text-[7px] text-text-secondary uppercase font-black tracking-widest leading-none mb-1 opacity-60">Streak</span>
                                             <span className="text-xs font-bold text-orange-500">🔥 {stats.streak}</span>
                                         </div>
-                                        <div className="flex flex-col border-l border-white/10 pl-3">
+                                        <div className="flex flex-col items-center md:items-start md:border-l md:border-white/10 md:pl-3">
                                             <span className="text-[7px] text-text-secondary uppercase font-black tracking-widest leading-none mb-1 opacity-60">Due</span>
                                             <span className="text-xs font-bold text-pink-500">{stats.due_count}</span>
                                         </div>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-4 w-full max-w-sm mx-auto mt-8">
+                <div className="flex flex-col gap-4 w-full max-w-[200px] md:max-w-sm mx-auto mt-8">
                     <Button
                         size="lg"
                         className="w-full text-xl py-5"

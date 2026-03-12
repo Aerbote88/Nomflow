@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 from .models import User
-from .main import get_session # Circular import? Avoid. Pass session to dep.
+from .database import get_session
 # Actually main probably imports auth. Need to be careful.
 # Usually session dependency is defined in a shared valid module or locally.
 # Let's redefine get_session or import from database module?

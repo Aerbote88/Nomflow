@@ -77,10 +77,10 @@ class User(SQLModel, table=True):
     __tablename__ = "user"
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(index=True, unique=True)
-    display_name: Optional[str] = Field(default=None)
     email: Optional[str] = Field(default=None, index=True)
     password_hash: str
     is_admin: bool = Field(default=False)
+    hide_from_leaderboard: bool = Field(default=False)
 
     progress: List["UserProgress"] = Relationship(back_populates="user")
     settings: Optional["UserSettings"] = Relationship(back_populates="user")

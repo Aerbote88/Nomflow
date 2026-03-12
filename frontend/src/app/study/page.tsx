@@ -309,27 +309,26 @@ function StudyContent() {
         }
     };
 
-    const handleUndo = async () => {
+    const handleUndo = () => {
         if (!lastReviewedItem) return;
 
-        try {
-            await apiFetch('study/undo', { method: 'POST' });
+        // Optimistic UI update — restore immediately
+        const itemToRestore = lastReviewedItem;
+        const qualityToRestore = lastReviewedQuality;
+        setCurrentItem(itemToRestore);
+        setIsFlipped(false);
+        setCanUndo(false);
+        setLastReviewedItem(null);
+        setStats(prev => ({
+            ...prev,
+            studied: Math.max(0, prev.studied - 1),
+            due: qualityToRestore !== null && qualityToRestore > 0 ? prev.due + 1 : prev.due
+        }));
 
-            // Just restore the item as current, don't add to queue
-            setCurrentItem(lastReviewedItem);
-            setIsFlipped(false);
-            setCanUndo(false);
-            setLastReviewedItem(null);
-
-            // Update stats
-            setStats(prev => ({
-                ...prev,
-                studied: Math.max(0, prev.studied - 1),
-                due: lastReviewedQuality !== null && lastReviewedQuality > 0 ? prev.due + 1 : prev.due
-            }));
-        } catch (err) {
+        // Sync with backend in the background
+        apiFetch('study/undo', { method: 'POST' }).catch(err => {
             console.error('Undo failed:', err);
-        }
+        });
     };
 
     if (loading && queue.length === 0 && !completed) {

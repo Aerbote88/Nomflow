@@ -161,7 +161,7 @@ export default function LibraryPage() {
                             📜
                         </div>
                         <p className="text-text-secondary font-black uppercase tracking-widest text-[10px] opacity-40 group-hover:opacity-100 transition-opacity">
-                            Embark on your first custom collection
+                            Create your first custom list
                         </p>
                     </div>
                 ) : (

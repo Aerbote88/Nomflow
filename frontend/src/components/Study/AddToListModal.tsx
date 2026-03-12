@@ -23,16 +23,36 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
     const [loading, setLoading] = useState(true);
     const [addingToList, setAddingToList] = useState<number | null>(null);
     const [successId, setSuccessId] = useState<number | null>(null);
+    const [showCreate, setShowCreate] = useState(false);
+    const [newListName, setNewListName] = useState('');
+    const [creating, setCreating] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
+            setShowCreate(false);
+            setNewListName('');
             api.get<List[]>('/api/lists')
                 .then(setLists)
                 .catch(console.error)
                 .finally(() => setLoading(false));
         }
     }, [isOpen]);
+
+    const createList = async () => {
+        if (!newListName.trim()) return;
+        setCreating(true);
+        try {
+            const created = await api.post<List>('/api/lists', { name: newListName.trim() });
+            setLists(prev => [...prev, created]);
+            setShowCreate(false);
+            setNewListName('');
+        } catch (error) {
+            console.error('Failed to create list:', error);
+        } finally {
+            setCreating(false);
+        }
+    };
 
     const addToList = async (listId: number) => {
         setAddingToList(listId);
@@ -80,11 +100,11 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                 <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
                     {loading ? (
                         <div className="text-center py-8 text-text-secondary/40 italic text-sm">Loading your lists...</div>
-                    ) : lists.length === 0 ? (
+                    ) : lists.length === 0 && !showCreate ? (
                         <div className="text-center py-8">
                             <p className="text-text-secondary/60 italic mb-4 text-sm">No lists yet.</p>
-                            <Button onClick={() => window.location.href = '/library'} variant="secondary" size="sm">
-                                Go to Library to Create
+                            <Button onClick={() => setShowCreate(true)} variant="primary" size="sm">
+                                + Create a List
                             </Button>
                         </div>
                     ) : (
@@ -120,9 +140,34 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                     )}
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-white/5 flex justify-end">
-                    <Button onClick={onClose} variant="secondary" size="sm">Done</Button>
-                </div>
+                {showCreate ? (
+                    <div className="mt-4 space-y-2">
+                        <input
+                            type="text"
+                            value={newListName}
+                            onChange={e => setNewListName(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && createList()}
+                            placeholder="List name..."
+                            autoFocus
+                            className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-accent-primary/50 focus:outline-none text-text-primary text-sm placeholder:text-text-secondary/30"
+                        />
+                        <div className="flex gap-2">
+                            <Button onClick={createList} disabled={creating || !newListName.trim()} variant="primary" size="sm" className="flex-1">
+                                {creating ? 'Creating...' : 'Create'}
+                            </Button>
+                            <Button onClick={() => { setShowCreate(false); setNewListName(''); }} variant="secondary" size="sm" className="flex-1">
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="mt-5 pt-4 border-t border-white/5 flex justify-between items-center">
+                        {!loading && lists.length > 0 && (
+                            <Button onClick={() => setShowCreate(true)} variant="secondary" size="sm">+ New List</Button>
+                        )}
+                        <Button onClick={onClose} variant="secondary" size="sm" className="ml-auto">Done</Button>
+                    </div>
+                )}
             </GlassCard>
         </div>
         </Portal>

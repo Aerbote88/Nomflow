@@ -207,8 +207,12 @@ class RegisterRequest(BaseModel):
     password: str
     email: str
 
+RESERVED_USERNAMES = {"albert e"}
+
 @app.post("/api/register")
 def register(req: RegisterRequest, session: Session = Depends(get_session)):
+    if req.username.strip().lower() in RESERVED_USERNAMES:
+        raise HTTPException(status_code=400, detail="Username already exists")
     existing = session.exec(select(User).where(User.username == req.username)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -372,12 +376,14 @@ def get_user_me(user: User = Depends(get_current_user)):
         "username": user.username,
         "display_name": user.display_name,
         "email": user.email,
-        "is_admin": user.is_admin
+        "is_admin": user.is_admin,
+        "hide_from_leaderboard": user.hide_from_leaderboard
     }
 
 class UserSettingsUpdate(BaseModel):
     display_name: Optional[str] = None
     email: Optional[str] = None
+    hide_from_leaderboard: Optional[bool] = None
 
 @app.post("/api/user/settings")
 def update_user_settings(req: UserSettingsUpdate, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
@@ -390,6 +396,8 @@ def update_user_settings(req: UserSettingsUpdate, user: User = Depends(get_curre
             if existing:
                 raise HTTPException(status_code=400, detail="Email already in use.")
         user.email = clean_email
+    if req.hide_from_leaderboard is not None:
+        user.hide_from_leaderboard = req.hide_from_leaderboard
     session.add(user)
     session.commit()
     return {"status": "ok"}
@@ -2053,15 +2061,16 @@ def get_global_leaderboard(period: str = "daily", session: Session = Depends(get
         start_date = now - timedelta(days=1)
         
     rankings = session.exec(
-        select(User.username, User.display_name, func.sum(XpLog.xp_amount).label("xp"))
+        select(User.username, User.is_admin, func.sum(XpLog.xp_amount).label("xp"))
         .join(XpLog, User.id == XpLog.user_id)
         .where(XpLog.timestamp >= start_date)
+        .where(User.hide_from_leaderboard == False)
         .group_by(User.id)
         .order_by(text("xp DESC"))
         .limit(20)
     ).all()
-    
-    return [{"username": r[1] or r[0], "xp": int(r[2])} for r in rankings]
+
+    return [{"username": "Albert E" if r[1] else r[0], "xp": int(r[2])} for r in rankings]
 
 @app.get("/api/leaderboard/titles")
 def get_leaderboard_titles(session: Session = Depends(get_session)):
@@ -2086,12 +2095,13 @@ def get_leaderboard(text_id: str, session: Session = Depends(get_session)):
                 LeaderboardEntry.score.label("score"),
                 LeaderboardEntry.achieved_at.label("achieved_at"),
                 User.username.label("username"),
-                User.display_name.label("display_name"),
+                User.is_admin.label("is_admin"),
                 User.id.label("user_id")
             )
             .join(User, LeaderboardEntry.user_id == User.id)
             .where(LeaderboardEntry.text_id == target_text_id)
             .where(LeaderboardEntry.mode == mode_name)
+            .where(User.hide_from_leaderboard == False)
             .order_by(desc(LeaderboardEntry.score))
         )
         best_entries = session.exec(rankings_query).all()
@@ -2102,13 +2112,14 @@ def get_leaderboard(text_id: str, session: Session = Depends(get_session)):
                 ChallengeSession.current_index.label("score"),
                 ChallengeSession.last_updated.label("achieved_at"),
                 User.username.label("username"),
-                User.display_name.label("display_name"),
+                User.is_admin.label("is_admin"),
                 User.id.label("user_id")
             )
             .join(User, ChallengeSession.user_id == User.id)
             .where(ChallengeSession.text_id == target_text_id)
             .where(ChallengeSession.mode == mode_name)
             .where(ChallengeSession.current_index > 0)
+            .where(User.hide_from_leaderboard == False)
         )
         active_sessions = session.exec(active_query).all()
         
@@ -2116,21 +2127,19 @@ def get_leaderboard(text_id: str, session: Session = Depends(get_session)):
         user_best = {} # user_id -> {username, score, achieved_at, is_live}
         
         # 1. Add persisted bests
-        for score, achieved_at, username, display_name, user_id in best_entries:
-            uname = display_name or username or "Unknown Scholar"
+        for score, achieved_at, username, is_admin, user_id in best_entries:
             user_best[user_id] = {
-                "username": uname,
+                "username": "Albert E" if is_admin else (username or "Unknown Scholar"),
                 "score": score,
                 "achieved_at": achieved_at,
                 "is_live": False
             }
             
         # 2. Add/Override with live progress if higher
-        for score, achieved_at, username, display_name, user_id in active_sessions:
-            uname = display_name or username or "Unknown Scholar"
+        for score, achieved_at, username, is_admin, user_id in active_sessions:
             if user_id not in user_best or score > user_best[user_id]["score"]:
                 user_best[user_id] = {
-                    "username": uname,
+                    "username": "Albert E" if is_admin else (username or "Unknown Scholar"),
                     "score": score,
                     "achieved_at": achieved_at,
                     "is_live": True
@@ -2148,10 +2157,11 @@ def get_leaderboard(text_id: str, session: Session = Depends(get_session)):
     # 3. Study Progress (Lines studied)
     # Join on Expression logic
     progress_query = (
-        select(User.username, func.count(UserProgress.user_id).label("lines_count"))
+        select(User.username, User.is_admin, func.count(UserProgress.user_id).label("lines_count"))
         .join(UserProgress, User.id == UserProgress.user_id)
         .join(Line, UserProgress.item_id == Line.line_dictionary_id)
         .where(UserProgress.item_type == "line")
+        .where(User.hide_from_leaderboard == False)
     )
     
     if target_text_id > 0:
@@ -2159,15 +2169,15 @@ def get_leaderboard(text_id: str, session: Session = Depends(get_session)):
 
     progress_entries = session.exec(
         progress_query
-        .group_by(User.id, User.username)
+        .group_by(User.id, User.username, User.is_admin)
         .order_by(desc("lines_count"))
         .limit(10)
     ).all()
     
     progress_results = []
-    for username, count in progress_entries:
+    for username, is_admin, count in progress_entries:
         progress_results.append({
-            "username": username,
+            "username": "Albert E" if is_admin else username,
             "score": count
         })
         

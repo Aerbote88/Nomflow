@@ -7,8 +7,8 @@ import { GlassCard, Button, Portal } from '@/components/ui';
 interface User {
     id: number;
     username: string;
-    display_name: string | null;
     email: string | null;
+    hide_from_leaderboard: boolean;
 }
 
 interface Settings {
@@ -36,8 +36,8 @@ export default function SettingsPage() {
     const [error, setError] = useState<string | null>(null);
 
     // Form states
-    const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
+    const [hideFromLeaderboard, setHideFromLeaderboard] = useState(false);
     const [sourceType, setSourceType] = useState<'text' | 'list'>('text');
     const [activeTextId, setActiveTextId] = useState<number | null>(null);
     const [activeListId, setActiveListId] = useState<number | null>(null);
@@ -49,6 +49,7 @@ export default function SettingsPage() {
     const [resetModalOpen, setResetModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteInput, setDeleteInput] = useState('');
+    const [emailConfirmOpen, setEmailConfirmOpen] = useState(false);
 
     useEffect(() => {
         async function fetchData() {
@@ -65,8 +66,8 @@ export default function SettingsPage() {
                 setTexts(textsData);
                 setLists(listsData);
 
-                setDisplayName(userData.display_name || '');
                 setEmail(userData.email || '');
+                setHideFromLeaderboard(userData.hide_from_leaderboard ?? false);
                 if (settingsData.active_list_id) {
                     setSourceType('list');
                     setActiveListId(settingsData.active_list_id);
@@ -91,11 +92,20 @@ export default function SettingsPage() {
     };
 
     const handleSaveProfile = async () => {
+        if ((email || null) !== (user?.email || null)) {
+            setEmailConfirmOpen(true);
+            return;
+        }
+        await saveProfile();
+    };
+
+    const saveProfile = async () => {
         try {
             await apiFetch('user/settings', {
                 method: 'POST',
-                body: JSON.stringify({ display_name: displayName, email: email || null })
+                body: JSON.stringify({ email: email || null, hide_from_leaderboard: hideFromLeaderboard })
             });
+            if (user) setUser({ ...user, email: email || null });
             showMessage('success', 'Profile updated!');
         } catch (err: any) {
             showMessage('error', err.message || 'Failed to update profile.');
@@ -193,19 +203,9 @@ export default function SettingsPage() {
                 {/* Profile Section */}
                 <GlassCard>
                     <h3 className="text-xl font-bold text-accent-primary font-display mb-2 uppercase tracking-tight">Public Profile</h3>
-                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">This name will be displayed on public leaderboards.</p>
+                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">Manage your account and leaderboard visibility.</p>
 
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">Display Name</label>
-                            <input
-                                type="text"
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                                className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-4 py-3 text-text-primary focus:border-accent-primary outline-none transition-colors"
-                                placeholder="Leave blank to use username"
-                            />
-                        </div>
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">
                                 Email <span className="text-text-secondary/40 normal-case font-normal tracking-normal text-xs">(used for password reset)</span>
@@ -218,6 +218,19 @@ export default function SettingsPage() {
                                 placeholder="you@example.com"
                             />
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => setHideFromLeaderboard(prev => !prev)}
+                            className="w-full flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-accent-primary/30 transition-all group"
+                        >
+                            <div className="text-left">
+                                <div className="text-sm font-bold text-text-primary group-hover:text-accent-primary transition-colors">Hide from Leaderboards</div>
+                                <div className="text-[10px] text-text-secondary/50 uppercase font-black tracking-widest mt-0.5">Your name won't appear in any rankings</div>
+                            </div>
+                            <div className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-4 relative ${hideFromLeaderboard ? 'bg-accent-primary' : 'bg-white/10'}`}>
+                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${hideFromLeaderboard ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </div>
+                        </button>
                         <Button className="w-full" onClick={handleSaveProfile}>Save Profile</Button>
                     </div>
                 </GlassCard>
@@ -352,6 +365,27 @@ export default function SettingsPage() {
                             <div className="flex gap-4">
                                 <Button variant="ghost" className="flex-1" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
                                 <Button className="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-20" disabled={deleteInput !== 'DELETE'} onClick={handleDeleteAccount}>Permanently Delete</Button>
+                            </div>
+                        </GlassCard>
+                    </div>
+                </Portal>
+            )}
+
+            {/* Email Change Confirmation Modal */}
+            {emailConfirmOpen && (
+                <Portal>
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+                        <GlassCard className="max-w-md border-accent-primary/30 shadow-2xl">
+                            <h3 className="text-2xl font-bold text-text-primary font-display mb-2">Update Email?</h3>
+                            <p className="text-sm text-text-secondary mb-2 leading-relaxed">
+                                Your email will be changed to:
+                            </p>
+                            <div className="px-4 py-3 bg-white/5 rounded-xl border border-white/10 mb-6 text-center font-bold text-text-primary">
+                                {email || <span className="text-text-secondary italic font-normal">None</span>}
+                            </div>
+                            <div className="flex gap-4">
+                                <Button variant="ghost" className="flex-1" onClick={() => setEmailConfirmOpen(false)}>Cancel</Button>
+                                <Button className="flex-1" onClick={async () => { setEmailConfirmOpen(false); await saveProfile(); }}>Confirm</Button>
                             </div>
                         </GlassCard>
                     </div>
