@@ -42,6 +42,7 @@ function StudyContent() {
     const isProcessingNext = useRef(false);
     const reviewedInSession = useRef<Set<string>>(new Set());
     const noMoreRemaining = useRef(false);
+    const activeSubmissionsRef = useRef(0);
 
     const mode = searchParams.get('mode') || 'srs';
     const listId = searchParams.get('list_id');
@@ -86,6 +87,12 @@ function StudyContent() {
         if (!silent) setLoading(true);
 
         try {
+            // Add a small coordination delay for pre-fetches to avoid 
+            // slamming the server at the exact same time as a review POST
+            if (silent) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
             const params = new URLSearchParams();
             params.append('mode', mode);
             params.append('count', mode === 'random' ? (count || '20') : count);
@@ -138,7 +145,8 @@ function StudyContent() {
                     console.log(`[Study Debug] Appending ${uniqueNewItems.length} unique items to queue`);
                     setQueue(prev => [...prev, ...uniqueNewItems]);
                     queueRef.current = [...queueRef.current, ...uniqueNewItems];
-                    if (uniqueNewItems[0]?.session_stats) {
+                    // Prevent concurrent race condition where a stale prefetch overwrites our optimistically decremented due count
+                    if (uniqueNewItems[0]?.session_stats && activeSubmissionsRef.current === 0) {
                         setStats(prev => ({ ...prev, due: uniqueNewItems[0].session_stats.due }));
                     }
                 } else {
@@ -288,6 +296,7 @@ function StudyContent() {
 
         // Fire review in the background
         if (!reviewedItem.is_practice && mode !== 'random') {
+            activeSubmissionsRef.current++;
             apiFetch('study/review', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -305,6 +314,8 @@ function StudyContent() {
                     setCurrentItem(null);
                     fetchItems();
                 }
+            }).finally(() => {
+                activeSubmissionsRef.current--;
             });
         }
     };

@@ -29,12 +29,21 @@ if DATABASE_URL:
         else:
             DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
             
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_recycle=3600,
+        pool_size=10,
+        max_overflow=20
+    )
 else:
     # Local SQLite
     sqlite_file_name = "learning.db"
     sqlite_url = f"sqlite:///{sqlite_file_name}"
-    connect_args = {"check_same_thread": False}
+    connect_args = {
+        "check_same_thread": False,
+        "timeout": 30  # 30 seconds busy timeout
+    }
     engine = create_engine(sqlite_url, connect_args=connect_args)
 
 def create_db_and_tables():
