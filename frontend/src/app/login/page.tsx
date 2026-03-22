@@ -36,7 +36,7 @@ export default function LoginPage() {
                 window.location.href = '/dashboard';
             } else {
                 const data = await res.json();
-                setError(data.detail || 'Invalid username or password.');
+                setError(data.detail || 'Invalid username/email or password.');
             }
         } catch (err) {
             console.error(err);
@@ -64,7 +64,7 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-8" suppressHydrationWarning>
                     <div>
                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
-                            Username
+                            Username or Email
                         </label>
                         <input
                             type="text"
@@ -72,7 +72,7 @@ export default function LoginPage() {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                             className="w-full px-5 py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
-                            placeholder="Enter your username..."
+                            placeholder="Enter your username or email..."
                             suppressHydrationWarning
                         />
                     </div>

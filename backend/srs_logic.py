@@ -5,7 +5,7 @@ from .models import UserProgress
 # Default settings
 STARTING_EASE = 2.5
 EASE_BONUS = 0.15
-EASE_PENALTY = 0.2
+EASE_PENALTY = 0.15 # Reduced from 0.20 to align with Anki
 INTERVAL_MODIFIER = 1.0
 HARD_INTERVAL = 1.2
 
@@ -71,9 +71,9 @@ def _calculate_review(item: UserProgress, quality: int, now: datetime) -> UserPr
 
     # Ease factor update (one adjustment only)
     if quality == 3:   # Easy
-        item.ease_factor += 0.10
+        item.ease_factor += 0.15 # Consistent with standard Anki
     elif quality == 1: # Hard
-        item.ease_factor -= 0.15
+        item.ease_factor -= 0.15 # Standard Anki penalty for Hard
     # Good (2): no change
     item.ease_factor = max(1.3, item.ease_factor)
 
@@ -86,9 +86,12 @@ def _calculate_review(item: UserProgress, quality: int, now: datetime) -> UserPr
     if quality == 1: # Hard
         item.interval = item.interval * HARD_INTERVAL
     elif quality == 2: # Good
-        item.interval = item.interval * item.ease_factor
+        new_interval = item.interval * item.ease_factor * INTERVAL_MODIFIER
+        # Ensure we always progress at least 1 day if Good is pressed
+        item.interval = max(item.interval + 1.0, new_interval)
     elif quality == 3: # Easy
-        item.interval = item.interval * item.ease_factor * 1.3
+        new_interval = item.interval * item.ease_factor * INTERVAL_MODIFIER * 1.3
+        item.interval = max(item.interval + 2.0, new_interval)
 
     item.next_review_due = now + timedelta(days=item.interval)
     return item

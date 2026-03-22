@@ -58,8 +58,8 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
                             className="p-8 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-accent-primary/50 transition-all group disabled:opacity-40"
                         >
                             <span className="text-3xl mb-4 block group-hover:scale-110 transition-transform">🎓</span>
-                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Continue Curriculum</div>
-                            <p className="text-[10px] text-text-secondary opacity-60">Follow our structured learning path</p>
+                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Nôm Curriculum</div>
+                            <p className="text-[10px] text-text-secondary opacity-60">A list of Nôm characters for common words from modern Vietnamese</p>
                         </button>
 
                         <button
@@ -73,14 +73,6 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
                         </button>
                     </div>
 
-                    <div className="mt-8">
-                        <button
-                            onClick={() => (window.location.href = '/library')}
-                            className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] hover:text-accent-primary transition-colors"
-                        >
-                            Or browse the library
-                        </button>
-                    </div>
                 </div>
             </div>
         </Portal>

@@ -181,11 +181,14 @@ class LoginResponse(BaseModel):
 @app.post("/api/token", response_model=LoginResponse)
 @limiter.limit("10/minute")
 async def login_for_access_token(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    user = session.exec(select(User).where(User.username == form_data.username)).first()
+    login_id = form_data.username.strip()
+    user = session.exec(select(User).where(
+        (User.username == login_id) | (User.email == login_id.lower())
+    )).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -585,30 +588,49 @@ def update_line(line_id: int, req: LineUpdateRequest, user: User = Depends(get_c
     if not line:
         raise HTTPException(status_code=404, detail="Line not found")
         
+    old_line_dict_id = line.line_dictionary_id
+    old_line_dict = session.get(Expression, old_line_dict_id) if old_line_dict_id else None
+
     # 1. Get or Create Master Line
     line_dict = get_or_create_line_dict(session, req.nom_text, req.quoc_ngu_text)
     
+    # Transfer translation and analysis if missing
+    if old_line_dict and old_line_dict.english_translation and not line_dict.english_translation:
+        line_dict.english_translation = old_line_dict.english_translation
+        session.add(line_dict)
+    if old_line_dict and old_line_dict.analysis and not line_dict.analysis:
+        line_dict.analysis = old_line_dict.analysis
+        session.add(line_dict)
+
     # 2. Populate characters if new (Automation)
     nom_chars = [c for c in req.nom_text if c.strip()]
     qn_words = req.quoc_ngu_text.split()
     update_line_characters(session, line_dict, nom_chars, qn_words)
     
     # 3. Update Line to point to new Dict
-    old_line_dict_id = line.line_dictionary_id
     line.line_dictionary_id = line_dict.id
     session.add(line)
     
-    # Note: We do NOT delete the old Expression even if orphaned (History preservation)
-    # But we MUST delete old UserProgress for the *Line*? 
-    # Actually, if we switch the Line ID's target, the UserProgress for the *Line ITEM* (item_id=Line.line_dictionary_id) check needs care.
-    # Wait, in the new model, UserProgress(item_type="line", item_id=X). X is now `line_dictionary_id`.
-    # So if we change `line.line_dictionary_id` from A to B:
-    # The user has progress on A. They do NOT have progress on B. This is correct behavior (new content = new study).
-    
-    # However, existing Chars?
-    # UserProgress(item_type="character", item_id=OldCharDictID). 
-    # If the new line reuses the same "Chi" character, they KEEP their progress! This is the goal!
-    
+    # Transfer StudyListItems and UserProgress to prevent data loss
+    if old_line_dict_id and old_line_dict_id != line_dict.id:
+        list_items = session.exec(select(StudyListItem).where(StudyListItem.item_type == "line", StudyListItem.item_id == old_line_dict_id)).all()
+        for li in list_items:
+            existing = session.exec(select(StudyListItem).where(StudyListItem.study_list_id == li.study_list_id, StudyListItem.item_type == "line", StudyListItem.item_id == line_dict.id)).first()
+            if not existing:
+                li.item_id = line_dict.id
+                session.add(li)
+            else:
+                session.delete(li)
+                
+        user_progresses = session.exec(select(UserProgress).where(UserProgress.item_type == "line", UserProgress.item_id == old_line_dict_id)).all()
+        for up in user_progresses:
+            existing_up = session.exec(select(UserProgress).where(UserProgress.user_id == up.user_id, UserProgress.item_type == "line", UserProgress.item_id == line_dict.id)).first()
+            if not existing_up:
+                up.item_id = line_dict.id
+                session.add(up)
+            else:
+                session.delete(up)
+
     session.commit()
     
     # CLEANUP OLD DICTIONARY IF ORPHANED
@@ -1271,10 +1293,16 @@ def get_next_study_item(
             
             merged.sort(key=lambda x: x["ln"])
             
-            # Filter out seen items from new candidates
-            merged = [m for m in merged if (m["type"], m["obj"].id) not in excluded_set]
+            # Filter out seen items and deduplicate new candidates
+            dedup_merged = []
+            seen_in_merge = set()
+            for m in merged:
+                k = (m["type"], m["obj"].id)
+                if k not in excluded_set and k not in seen_in_merge:
+                    seen_in_merge.add(k)
+                    dedup_merged.append(m)
 
-            for item in merged[:count - len(results)]:
+            for item in dedup_merged[:count - len(results)]:
                 prog = UserProgress(
                     user_id=user.id,
                     item_type=item["type"],
@@ -1906,6 +1934,7 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
                 ExpressionCharacter.dictionary_id,
                 Expression.nom_text,
                 Line.text_id,
+                SourceText.title.label("source_title"),
                 Line.line_number,
                 ExpressionCharacter.order_in_line,
                 UserProgress.id.label("line_progress_id")
@@ -1934,12 +1963,13 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
         
         candidates = session.exec(candidates_query).all()
         # Group by dictionary_id
-        for dict_id, nom_text, text_id, line_ln, order, line_prog_id in candidates:
+        for dict_id, nom_text, text_id, s_title, line_ln, order, line_prog_id in candidates:
             if dict_id not in all_context_candidates:
                 all_context_candidates[dict_id] = []
             all_context_candidates[dict_id].append({
                 "text": nom_text,
                 "text_id": text_id,
+                "source_title": s_title,
                 "line_number": line_ln,
                 "order": order,
                 "has_progress": line_prog_id is not None
@@ -1951,6 +1981,7 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
             if not entry: continue
             
             context_line = ""
+            item_source_title = source_title
             if include_context and not is_curated:
                 candidates = all_context_candidates.get(entry.id, [])
                 if candidates:
@@ -1968,6 +1999,7 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
                         best = candidates[0]
                     
                     context_line = best["text"]
+                    item_source_title = best.get("source_title", source_title)
                     
                     # Highlight the specific instance if we have the order
                     if "order" in best and best["text"]:
@@ -1985,7 +2017,7 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
                 "nom": entry.nom_char,
                 "quoc_ngu": _clean_text(entry.quoc_ngu),
                 "context_line": context_line,
-                "source_title": source_title,
+                "source_title": item_source_title,
                 "intervals": get_review_intervals(progress)
             })
         else:
