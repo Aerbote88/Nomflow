@@ -142,14 +142,18 @@ export default function ListDetailPage() {
                                         </span>
                                     </td>
                                     <td className="p-4 md:p-6 align-middle">
-                                        <div className="font-nom text-2xl md:text-3xl text-text-primary group-hover:text-accent-primary transition-colors leading-tight">
-                                            {item.nom}
-                                        </div>
+                                        <Link href={`/dictionary/${item.type === 'character' ? 'char' : 'line'}/${item.id}`}>
+                                            <div className="font-nom text-2xl md:text-3xl text-text-primary group-hover:text-accent-primary transition-colors leading-tight hover:underline cursor-pointer">
+                                                {item.nom}
+                                            </div>
+                                        </Link>
                                     </td>
                                     <td className="p-4 md:p-6 align-middle">
-                                        <div className="text-sm md:text-lg font-black text-text-primary font-serif italic tracking-tight opacity-90">
-                                            {item.quoc_ngu}
-                                        </div>
+                                        <Link href={`/dictionary/${item.type === 'character' ? 'char' : 'line'}/${item.id}`}>
+                                            <div className="text-sm md:text-lg font-black text-text-primary font-serif italic tracking-tight opacity-90 hover:text-accent-primary hover:underline cursor-pointer transition-colors">
+                                                {item.quoc_ngu}
+                                            </div>
+                                        </Link>
                                     </td>
                                     <td className="p-4 md:p-6 text-right align-middle">
                                         <Button
