@@ -133,10 +133,13 @@ function StudyContent() {
                     noMoreRemaining.current = true;
                 }
 
-                // Client-side guard against duplicates already in queue
+                // Client-side guard against duplicates already in queue or reviewed in this session
                 const currentIds = new Set([currentItemRef.current, ...queueRef.current]
                     .filter(Boolean)
                     .map(i => `${i!.item_type}:${i!.content_id}`));
+                
+                // Also add reviewed items to the client-side exclusion set
+                reviewedInSession.current.forEach(id => currentIds.add(id));
 
                 const uniqueNewItems = newItems.filter(item =>
                     !currentIds.has(`${item.item_type}:${item.content_id}`)
@@ -171,11 +174,12 @@ function StudyContent() {
     // Save session state to localStorage whenever it changes (SRS only)
     useEffect(() => {
         if (mode === 'random') return;
-        if (currentItem || queue.length > 0) {
+        if (currentItem || queue.length > 0 || reviewedInSession.current.size > 0) {
             const sessionState = {
                 queue,
                 currentItem,
                 stats,
+                reviewedIds: Array.from(reviewedInSession.current),
                 timestamp: Date.now()
             };
             localStorage.setItem(sessionKey, JSON.stringify(sessionState));
@@ -197,7 +201,12 @@ function StudyContent() {
                 const oneHour = 60 * 60 * 1000;
                 if (Date.now() - sessionState.timestamp < oneHour) {
                     setQueue(sessionState.queue || []);
+                    queueRef.current = sessionState.queue || [];
                     setCurrentItem(sessionState.currentItem || null);
+                    currentItemRef.current = sessionState.currentItem || null;
+                    if (sessionState.reviewedIds) {
+                        reviewedInSession.current = new Set(sessionState.reviewedIds);
+                    }
                     setStats({ due: 0, studied: sessionState.stats?.studied || 0 });
                     setLoading(false);
                     // Fetch fresh due count — don't trust stale localStorage value
