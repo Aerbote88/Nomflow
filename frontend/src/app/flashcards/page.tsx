@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 
@@ -28,7 +29,7 @@ export default function VocabPage() {
     useEffect(() => {
         api.get<VocabItem[]>('/api/user/vocab')
             .then(setVocab)
-            .catch(console.error)
+            .catch(logger.error)
             .finally(() => setLoading(false));
     }, []);
 

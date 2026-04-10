@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 
 interface ListItem {
@@ -33,7 +34,7 @@ export default function ListDetailPage() {
             const resp = await apiFetch<ListDetail>(`lists/${listId}`);
             setData(resp);
         } catch (err) {
-            console.error('Failed to load list details:', err);
+            logger.error('Failed to load list details:', err);
             router.push('/library');
         } finally {
             setLoading(false);
@@ -50,7 +51,7 @@ export default function ListDetailPage() {
             await apiFetch(`lists/${listId}/items/${type}/${id}`, { method: 'DELETE' });
             fetchList();
         } catch (err) {
-            console.error('Failed to remove item:', err);
+            logger.error('Failed to remove item:', err);
         }
     };
 
@@ -60,7 +61,7 @@ export default function ListDetailPage() {
             await apiFetch(`lists/${listId}`, { method: 'DELETE' });
             router.push('/library');
         } catch (err) {
-            console.error('Failed to delete list:', err);
+            logger.error('Failed to delete list:', err);
         }
     };
 

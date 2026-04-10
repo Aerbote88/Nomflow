@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 
 export default function LoginPage() {
@@ -39,7 +40,7 @@ export default function LoginPage() {
                 setError(data.detail || 'Invalid username/email or password.');
             }
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             setError('An unexpected error occurred during login.');
         } finally {
             setLoading(false);
@@ -51,11 +52,11 @@ export default function LoginPage() {
             {/* Background Decorative Elements */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-gold/5 blur-[120px] rounded-full pointer-events-none" />
 
-            <header className="mb-12 text-center animate-in fade-in slide-in-from-top-4 duration-1000">
-                <div className="text-[12px] font-black text-accent-primary uppercase tracking-[0.5em] mb-4">
+            <header className="mb-12 text-center flex flex-col items-center animate-in fade-in slide-in-from-top-4 duration-1000">
+                <div className="text-5xl md:text-6xl font-display font-medium text-accent-primary uppercase tracking-[0.1em] mb-3 leading-tight">
                     NômFlow
                 </div>
-                <h1 className="text-5xl md:text-6xl font-display font-bold text-text-primary tracking-tight">
+                <h1 className="text-sm md:text-base font-normal text-text-secondary/60 tracking-[0.2em] uppercase">
                     Welcome Back
                 </h1>
             </header>

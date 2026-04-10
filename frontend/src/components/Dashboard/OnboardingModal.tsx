@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { Portal } from '@/components/ui';
 
 interface OnboardingModalProps {
@@ -31,7 +32,7 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
             });
             onComplete();
         } catch (err) {
-            console.error('Failed to set path:', err);
+            logger.error('Failed to set path:', err);
         } finally {
             setSaving(false);
         }

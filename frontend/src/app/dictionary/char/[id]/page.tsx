@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import Link from 'next/link';
 
@@ -46,7 +47,7 @@ export default function CharDetailPage() {
         if (id) {
             api.get<CharData>(`/api/dictionary/char/${id}`)
                 .then(setData)
-                .catch(console.error)
+                .catch(logger.error)
                 .finally(() => setLoading(false));
         }
     }, [id]);

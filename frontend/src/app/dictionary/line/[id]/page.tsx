@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import Link from 'next/link';
 
@@ -64,7 +65,7 @@ export default function LineDetailPage() {
         if (id) {
             fetchData();
             // Fetch user info to check admin status
-            apiFetch<UserInfo>('user/me').then(setUser).catch(console.error);
+            apiFetch<UserInfo>('user/me').then(setUser).catch(logger.error);
         }
     }, [id]);
 
@@ -73,7 +74,7 @@ export default function LineDetailPage() {
             const lineData = await api.get<LineData>(`/api/dictionary/line/${id}`);
             setData(lineData);
         } catch (error) {
-            console.error('Failed to fetch line data:', error);
+            logger.error('Failed to fetch line data:', error);
         } finally {
             setLoading(false);
         }
@@ -99,7 +100,7 @@ export default function LineDetailPage() {
             await fetchData();
             setIsEditingTranslation(false);
         } catch (error) {
-            console.error('Failed to update translation:', error);
+            logger.error('Failed to update translation:', error);
             alert('Failed to update translation. Please try again.');
         }
     };

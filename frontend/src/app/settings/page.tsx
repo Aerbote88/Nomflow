@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button, Portal } from '@/components/ui';
 
 interface User {
@@ -76,7 +77,7 @@ export default function SettingsPage() {
                     setActiveTextId(settingsData.active_text_id);
                 }
             } catch (err) {
-                console.error('Failed to load settings:', err);
+                logger.error('Failed to load settings:', err);
                 setError('Failed to load settings data.');
             } finally {
                 setLoading(false);

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { SourceCard } from '@/components/Library/SourceCard';
 import { StudyOptionsModal } from '@/components/Library/StudyOptionsModal';
 import { CreateListModal } from '@/components/Library/CreateListModal';
@@ -55,7 +56,7 @@ export default function LibraryPage() {
             setLists(listsData);
             setSettings(settingsData);
         } catch (err) {
-            console.error('Failed to load library data:', err);
+            logger.error('Failed to load library data:', err);
         } finally {
             setLoading(false);
         }
@@ -78,7 +79,7 @@ export default function LibraryPage() {
             });
             fetchData(); // Refresh state
         } catch (err) {
-            console.error('Failed to set active source:', err);
+            logger.error('Failed to set active source:', err);
         }
     };
 
