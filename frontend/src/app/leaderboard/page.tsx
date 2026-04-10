@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import { useSearchParams } from 'next/navigation';
 
@@ -39,7 +40,7 @@ function LeaderboardContent() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        api.get<Title[]>('/api/leaderboard/titles').then(setTitles).catch(console.error);
+        api.get<Title[]>('/api/leaderboard/titles').then(setTitles).catch(logger.error);
     }, []);
 
     useEffect(() => {
@@ -47,7 +48,7 @@ function LeaderboardContent() {
         const fetch = source === 'global'
             ? api.get<GlobalRanking[]>(`/api/leaderboard/global?period=${period}`).then(d => setGlobalData(d))
             : api.get<SourceLeaderboardData>(`/api/leaderboard/${source}`).then(d => setSourceData(d));
-        fetch.catch(console.error).finally(() => setLoading(false));
+        fetch.catch(logger.error).finally(() => setLoading(false));
 
         const params = new URLSearchParams(window.location.search);
         params.set('source', source);

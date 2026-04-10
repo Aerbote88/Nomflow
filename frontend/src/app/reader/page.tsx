@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard } from '@/components/ui';
 
 interface SourceText {
@@ -24,7 +25,7 @@ export default function ReaderPage() {
             .then((data) => {
                 setTexts(data.filter((t) => !WORD_LIST_AUTHORS.includes(t.author)));
             })
-            .catch(console.error)
+            .catch(logger.error)
             .finally(() => setLoading(false));
     }, []);
 

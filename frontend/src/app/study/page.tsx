@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { StudyHeader } from '@/components/Study/StudyHeader';
 import { StudyCard } from '@/components/Study/StudyCard';
 import { ReviewControls } from '@/components/Study/ReviewControls';
@@ -113,10 +114,10 @@ function StudyContent() {
                 params.append('seen', sessionSeen.join(','));
             }
 
-            console.log(`[Study Debug] Fetching items. In-flight IDs:`, inFlight);
+            logger.log(`[Study Debug] Fetching items. In-flight IDs:`, inFlight);
 
             const data = await apiFetch<any>(`study/next?${params.toString()}`);
-            console.log(`[Study Debug] Received data:`, data);
+            logger.log(`[Study Debug] Received data:`, data);
 
             if (data.status === 'done') {
                 noMoreRemaining.current = true;
@@ -142,7 +143,7 @@ function StudyContent() {
                 );
 
                 if (uniqueNewItems.length > 0) {
-                    console.log(`[Study Debug] Appending ${uniqueNewItems.length} unique items to queue`);
+                    logger.log(`[Study Debug] Appending ${uniqueNewItems.length} unique items to queue`);
                     setQueue(prev => [...prev, ...uniqueNewItems]);
                     queueRef.current = [...queueRef.current, ...uniqueNewItems];
                     // Prevent concurrent race condition where a stale prefetch overwrites our optimistically decremented due count
@@ -150,11 +151,11 @@ function StudyContent() {
                         setStats(prev => ({ ...prev, due: uniqueNewItems[0].session_stats.due }));
                     }
                 } else {
-                    console.log(`[Study Debug] No new unique items to add`);
+                    logger.log(`[Study Debug] No new unique items to add`);
                 }
             }
         } catch (err) {
-            console.error('Fetch study items failed:', err);
+            logger.error('Fetch study items failed:', err);
             // If it's the initial load and it fails, it might be an empty source 
             // or a backend error. Default to completion screen as requested.
             if (queueRef.current.length === 0 && !currentItemRef.current) {
@@ -206,11 +207,11 @@ function StudyContent() {
                     apiFetch<{ due_count: number }>(`dashboard/stats?${statsParams.toString()}`)
                         .then(data => setStats(prev => ({ ...prev, due: data.due_count })))
                         .catch(() => {});
-                    console.log('[Study] Restored session from localStorage');
+                    logger.log('[Study] Restored session from localStorage');
                     return;
                 }
             } catch (err) {
-                console.error('[Study] Failed to restore session:', err);
+                logger.error('[Study] Failed to restore session:', err);
             }
         }
         // If no valid saved session, fetch new items
@@ -226,7 +227,7 @@ function StudyContent() {
 
     const nextItem = () => {
         if (isProcessingNext.current) {
-            console.log('[Study] Skipping nextItem - already processing');
+            logger.log('[Study] Skipping nextItem - already processing');
             return;
         }
 
@@ -247,7 +248,7 @@ function StudyContent() {
             return;
         }
         const next = queueRef.current[0];
-        console.log(`[Study Debug] Advancing to next item:`, `${next.item_type}:${next.content_id}`);
+        logger.log(`[Study Debug] Advancing to next item:`, `${next.item_type}:${next.content_id}`);
         
         setQueue(prev => prev.slice(1));
         queueRef.current = queueRef.current.slice(1);
@@ -256,7 +257,7 @@ function StudyContent() {
 
         // Pre-fetch if queue is low (not for random mode — we have a fixed set)
         if (mode !== 'random' && queueRef.current.length < 3) {
-            console.log(`[Study Debug] Queue low (${queueRef.current.length} remaining), pre-fetching...`);
+            logger.log(`[Study Debug] Queue low (${queueRef.current.length} remaining), pre-fetching...`);
             fetchItems(true);
         }
 
@@ -282,7 +283,7 @@ function StudyContent() {
 
         // Check for stale session before advancing
         if (!reviewedItem.is_practice && mode !== 'random' && !reviewedItem.user_progress_id) {
-            console.warn('[Study] Stale session - clearing and restarting');
+            logger.warn('[Study] Stale session - clearing and restarting');
             localStorage.removeItem(sessionKey);
             setQueue([]);
             queueRef.current = [];
@@ -306,9 +307,9 @@ function StudyContent() {
             }).then(() => {
                 setCanUndo(true);
             }).catch(err => {
-                console.error('Review failed:', err);
+                logger.error('Review failed:', err);
                 if (err instanceof Error && err.message === 'Item not found') {
-                    console.warn('[Study] Stale session detected - clearing and restarting');
+                    logger.warn('[Study] Stale session detected - clearing and restarting');
                     localStorage.removeItem(sessionKey);
                     setQueue([]);
                     setCurrentItem(null);
@@ -338,7 +339,7 @@ function StudyContent() {
 
         // Sync with backend in the background
         apiFetch('study/undo', { method: 'POST' }).catch(err => {
-            console.error('Undo failed:', err);
+            logger.error('Undo failed:', err);
         });
     };
 

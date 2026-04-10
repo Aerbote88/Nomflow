@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 
 export default function LoginPage() {
@@ -39,7 +40,7 @@ export default function LoginPage() {
                 setError(data.detail || 'Invalid username/email or password.');
             }
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             setError('An unexpected error occurred during login.');
         } finally {
             setLoading(false);

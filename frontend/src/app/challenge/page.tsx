@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import Link from 'next/link';
 
@@ -63,7 +64,7 @@ function ChallengePage() {
                 isDataLoaded.current = true;
                 setPhase('mode_select');
             } catch (err) {
-                console.error('Failed to load challenge content:', err);
+                logger.error('Failed to load challenge content:', err);
             }
         };
         load();

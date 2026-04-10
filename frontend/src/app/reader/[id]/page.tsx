@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import { AddToListModal } from '@/components/Study/AddToListModal';
 
@@ -114,7 +115,7 @@ export default function ReaderDetailPage() {
             setData(resp);
             setPage(resp.current_page);
         } catch (err) {
-            console.error('Failed to load text content:', err);
+            logger.error('Failed to load text content:', err);
         } finally {
             setLoading(false);
         }
@@ -129,7 +130,7 @@ export default function ReaderDetailPage() {
     useEffect(() => {
         apiFetch<SourceText[]>('texts')
             .then((data) => setTexts(data.filter((t) => !WORD_LIST_AUTHORS.includes(t.author))))
-            .catch(console.error);
+            .catch(logger.error);
     }, []);
 
     const handleLineClick = useCallback(async (line: LineItem) => {
@@ -143,7 +144,7 @@ export default function ReaderDetailPage() {
             const resp = await apiFetch<LineDictData>(`dictionary/line/${line.line_dict_id}`);
             setDictData(resp);
         } catch (err) {
-            console.error('Failed to load dictionary data:', err);
+            logger.error('Failed to load dictionary data:', err);
             setDictData(null);
         } finally {
             setDictLoading(false);
@@ -157,7 +158,7 @@ export default function ReaderDetailPage() {
             const resp = await apiFetch<CharDictData>(`dictionary/char/${charId}`);
             setCharDictData(resp);
         } catch (err) {
-            console.error('Failed to load char dictionary data:', err);
+            logger.error('Failed to load char dictionary data:', err);
             setCharDictData(null);
         } finally {
             setCharDictLoading(false);

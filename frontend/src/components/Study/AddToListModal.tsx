@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { Button, GlassCard, Portal } from '@/components/ui';
 
 interface List {
@@ -34,7 +35,7 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
             setNewListName('');
             api.get<List[]>('/api/lists')
                 .then(setLists)
-                .catch(console.error)
+                .catch(logger.error)
                 .finally(() => setLoading(false));
         }
     }, [isOpen]);
@@ -48,7 +49,7 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
             setShowCreate(false);
             setNewListName('');
         } catch (error) {
-            console.error('Failed to create list:', error);
+            logger.error('Failed to create list:', error);
         } finally {
             setCreating(false);
         }
@@ -69,7 +70,7 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                 }
             }
         } catch (error) {
-            console.error('Failed to add item to list:', error);
+            logger.error('Failed to add item to list:', error);
         } finally {
             setAddingToList(null);
         }

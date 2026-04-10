@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import { StatCard, ProgressBar } from '@/components/Dashboard/Stats';
 import { CustomStudyModal } from '@/components/Dashboard/CustomStudyModal';
@@ -44,7 +45,7 @@ export default function DashboardPage() {
                 setStats(data);
                 if (!data.active_source_name) setIsOnboarding(true);
             } catch (err) {
-                console.error('Failed to load stats:', err);
+                logger.error('Failed to load stats:', err);
                 setError('Failed to load dashboard data. Please make sure you are logged in.');
             } finally {
                 setLoading(false);

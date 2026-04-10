@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 
 export default function RegisterPage() {
@@ -65,7 +66,7 @@ export default function RegisterPage() {
                 setError(data.detail || 'Registration failed. The name might be taken.');
             }
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             setError('An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);

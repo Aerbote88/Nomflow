@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = endpoint.startsWith('/') ? endpoint : `/api/${endpoint}`;
     
@@ -8,7 +10,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
         try {
             if (attempt > 0) {
                 const delay = Math.pow(2, attempt - 1) * 500; // 500ms, 1000ms, 2000ms
-                console.log(`[API] Retrying ${endpoint} (attempt ${attempt}/${maxRetries}) after ${delay}ms...`);
+                logger.log(`[API] Retrying ${endpoint} (attempt ${attempt}/${maxRetries}) after ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
 
@@ -30,7 +32,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
             if (!response.ok) {
                 // Retry on transient server errors
                 if (attempt < maxRetries && [502, 503, 504].includes(response.status)) {
-                    console.warn(`[API] Transient error ${response.status} on ${endpoint}`);
+                    logger.warn(`[API] Transient error ${response.status} on ${endpoint}`);
                     continue;
                 }
 

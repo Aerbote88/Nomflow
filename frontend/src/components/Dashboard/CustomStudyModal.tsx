@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button, Portal } from '@/components/ui';
 
 interface SourceText {
@@ -54,7 +55,7 @@ export function CustomStudyModal({ isOpen, onClose, initialTextId, initialListId
             if (!selectedTextId && !selectedListId && t.length > 0) {
                 setSelectedTextId(t[0].id);
             }
-        }).catch(console.error).finally(() => setLoading(false));
+        }).catch(logger.error).finally(() => setLoading(false));
     }, [isOpen]);
 
     // Sync initial values when they change

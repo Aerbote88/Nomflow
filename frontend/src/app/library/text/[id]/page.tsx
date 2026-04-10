@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 
 interface LineItem {
@@ -53,7 +54,7 @@ export default function TextDetailPage() {
             setData(resp);
             setPage(resp.current_page);
         } catch (err) {
-            console.error('Failed to load text content:', err);
+            logger.error('Failed to load text content:', err);
         } finally {
             setLoading(false);
         }
@@ -62,7 +63,7 @@ export default function TextDetailPage() {
     useEffect(() => {
         fetchContent(1);
         // Fetch user info to check admin status
-        apiFetch<UserInfo>('user/me').then(setUser).catch(console.error);
+        apiFetch<UserInfo>('user/me').then(setUser).catch(logger.error);
     }, [textId]);
 
     const handlePageChange = (p: number) => {
@@ -101,7 +102,7 @@ export default function TextDetailPage() {
             await fetchContent(page);
             cancelEdit();
         } catch (err) {
-            console.error('Failed to update line:', err);
+            logger.error('Failed to update line:', err);
             alert('Failed to update line. Please try again.');
         }
     };
