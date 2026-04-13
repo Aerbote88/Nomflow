@@ -1951,10 +1951,12 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
             .where(ExpressionCharacter.dictionary_id.in_(char_ids))
             .where(SourceText.author.not_in(["Chunom.org", "Digitizing Vietnam Team"]))
         )
-        # Optimization: Prioritize active text and limit total candidates
-        order_clauses = [case((UserProgress.id != None, 0), else_=1)]
+        # Optimization: Prioritize active text first (so the LIMIT below cannot
+        # exhaust before active-text rows are reached), then studied lines, then line number
+        order_clauses = []
         if active_text_id:
             order_clauses.append(case((Line.text_id == active_text_id, 0), else_=1))
+        order_clauses.append(case((UserProgress.id != None, 0), else_=1))
         order_clauses.append(Line.line_number)
         
         candidates_query = candidates_query.order_by(*order_clauses)
@@ -1986,17 +1988,20 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
                 candidates = all_context_candidates.get(entry.id, [])
                 if candidates:
                     # Pick the best candidate in Python
-                    # Priority 1: Studied
-                    # Priority 2: Fallback (smallest line number)
-                    
+                    # Priority 1: From active text (the source being studied)
+                    # Priority 2: Studied
+                    # Priority 3: Smallest line number
+
                     best = None
-                    studied = [c for c in candidates if c["has_progress"]]
-                    
+                    in_active = [c for c in candidates if active_text_id and c["text_id"] == active_text_id]
+                    pool = in_active if in_active else candidates
+
+                    studied = [c for c in pool if c["has_progress"]]
                     if studied:
                         best = studied[0]
                     else:
-                        candidates.sort(key=lambda x: (x["text_id"] or 999999, x["line_number"] or 999999))
-                        best = candidates[0]
+                        pool.sort(key=lambda x: (x["line_number"] or 999999))
+                        best = pool[0]
                     
                     context_line = best["text"]
                     item_source_title = best.get("source_title", source_title)
@@ -2443,7 +2448,12 @@ def get_dictionary_char_data(entry_id: int, user: User = Depends(get_current_use
             variants.append(v)
     
     # 2. Homophones
+    import unicodedata
     homophones_raw = session.exec(select(Character).where(Character.quoc_ngu == entry.quoc_ngu, Character.id != entry.id)).all()
+    # Filter to ensure exact Unicode match — some DB collations are accent-insensitive
+    # and treat e.g. "thân" and "than" as equal when they are distinct readings
+    target_nfc = unicodedata.normalize('NFC', entry.quoc_ngu.strip())
+    homophones_raw = [h for h in homophones_raw if unicodedata.normalize('NFC', h.quoc_ngu.strip()) == target_nfc]
     homophones = []
     seen_nom = {entry.nom_char}
     for h in homophones_raw:
@@ -2548,57 +2558,10 @@ def get_dictionary_line_data(line_id: int, user: User = Depends(get_current_user
     # Get user stats for this line
     prog = session.exec(select(UserProgress).where(UserProgress.user_id == user.id, UserProgress.item_type == "line", UserProgress.item_id == ld.id)).first()
 
-    # Get Source Info (Text Title & Line Number)
-    # Find the first Line usage
-    source_info = session.exec(
-        select(SourceText.title, Line.line_number, Line.text_id)
-        .join(Line, SourceText.id == Line.text_id)
-        .where(Line.line_dictionary_id == ld.id)
-        .limit(1)
-    ).first()
-    
-    source_title = source_info[0] if source_info else "Unknown Source"
-    line_number = source_info[1] if source_info else 0
-    text_id = source_info[2] if source_info else None
-
-    # Find adjacent lines for navigation
-    prev_line_id = None
-    next_line_id = None
-    prev_line_number = None
-    next_line_number = None
-    
-    if text_id and line_number:
-        prev_line = session.exec(
-            select(Line)
-            .where(Line.text_id == text_id, Line.line_number == line_number - 1)
-            .limit(1)
-        ).first()
-        
-        if prev_line:
-            prev_line_id = prev_line.line_dictionary_id
-            prev_line_number = prev_line.line_number
-        
-        next_line = session.exec(
-            select(Line)
-            .where(Line.text_id == text_id, Line.line_number == line_number + 1)
-            .limit(1)
-        ).first()
-        
-        if next_line:
-            next_line_id = next_line.line_dictionary_id
-            next_line_number = next_line.line_number
-
     return {
         "id": ld.id,
         "nom": ld.nom_text,
         "quoc_ngu": ld.quoc_ngu_text,
-        "source_title": source_title,
-        "line_number": line_number,
-        "text_id": text_id,
-        "prev_line_id": prev_line_id,
-        "next_line_id": next_line_id,
-        "prev_line_number": prev_line_number,
-        "next_line_number": next_line_number,
         "english_translation": ld.english_translation,
         "analysis": json.loads(ld.analysis) if ld.analysis else None,
         "characters": chars_data,
