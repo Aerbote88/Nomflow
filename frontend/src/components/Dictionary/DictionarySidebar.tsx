@@ -119,7 +119,7 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                         {charDictData.quoc_ngu}
                     </div>
                     {(() => {
-                        const char = charDictData.nom?.[0];
+                        const char = charDictData.nom ? [...charDictData.nom][0] : undefined;
                         if (!char) return null;
                         const linkClass = "px-2.5 py-1 rounded-md bg-white/5 hover:bg-accent-primary/10 border border-white/10 hover:border-accent-primary/30 text-[9px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors";
                         return (
