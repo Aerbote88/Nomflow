@@ -11,6 +11,7 @@ interface StudyCardProps {
     itemType: 'character' | 'line';
     isFlipped: boolean;
     contentId: number;
+    onNomClick?: () => void;
 }
 
 export const StudyCard: React.FC<StudyCardProps> = ({
@@ -22,20 +23,17 @@ export const StudyCard: React.FC<StudyCardProps> = ({
     lineNumber,
     itemType,
     isFlipped,
-    contentId
+    contentId,
+    onNomClick
 }) => {
-    const dictionaryUrl = itemType === 'character'
-        ? `/dictionary/char/${contentId}`
-        : `/dictionary/line/${contentId}`;
-
     return (
         <GlassCard className="w-full max-w-[600px] min-h-[280px] md:min-h-[450px] flex flex-col justify-center items-center relative overflow-hidden group transition-[background-color,border-color,box-shadow,transform,opacity] duration-500">
             <div className="w-full text-center z-10 p-4 md:p-8">
                 {/* Front and Back Container (Stabilized) */}
                 <div className="flex flex-col items-center justify-center min-h-[180px] md:min-h-[300px]">
-                    <a
-                        href={dictionaryUrl}
-                        className="font-nom text-text-primary leading-tight hover:text-accent-primary transition-colors cursor-pointer"
+                    <button
+                        onClick={onNomClick}
+                        className="font-nom text-text-primary leading-tight hover:text-accent-primary transition-colors cursor-pointer bg-transparent border-none outline-none"
                         style={{ fontSize: 'clamp(2.5rem, 12vw, 6.5rem)' }}
                         dangerouslySetInnerHTML={{ __html: nom }}
                     />

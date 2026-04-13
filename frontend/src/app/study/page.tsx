@@ -9,6 +9,9 @@ import { StudyCard } from '@/components/Study/StudyCard';
 import { ReviewControls } from '@/components/Study/ReviewControls';
 import { CompletionScreen } from '@/components/Study/CompletionScreen';
 import { AddToListModal } from '@/components/Study/AddToListModal';
+import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
+import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
+import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
 
 interface StudyItem {
     user_progress_id: number;
@@ -38,6 +41,9 @@ function StudyContent() {
     const isFetchingRef = useRef(false);
     const [canUndo, setCanUndo] = useState(false);
     const [isAddToListOpen, setIsAddToListOpen] = useState(false);
+    const [dictSidebarOpen, setDictSidebarOpen] = useState(false);
+    const [modalItem, setModalItem] = useState<{ id: number; type: 'line' | 'character'; name: string } | null>(null);
+    const dict = useDictionarySidebar();
     const [lastReviewedItem, setLastReviewedItem] = useState<StudyItem | null>(null);
     const [lastReviewedQuality, setLastReviewedQuality] = useState<number | null>(null);
     const isProcessingNext = useRef(false);
@@ -51,7 +57,7 @@ function StudyContent() {
     const customParams = searchParams.get('custom_params');
     const count = searchParams.get('count') || '5';
 
-    const [currentUser, setCurrentUser] = useState<string>('anon');
+    const [currentUser, setCurrentUser] = useState<string | null>(null);
 
     // Purge study sessions from other users on mount
     useEffect(() => {
@@ -174,12 +180,12 @@ function StudyContent() {
     // Save session state to localStorage whenever it changes (SRS only)
     useEffect(() => {
         if (mode === 'random') return;
-        if (currentItem || queue.length > 0 || reviewedInSession.current.size > 0) {
+        if (currentUser === null) return;
+        if (currentItem || queue.length > 0) {
             const sessionState = {
                 queue,
                 currentItem,
                 stats,
-                reviewedIds: Array.from(reviewedInSession.current),
                 timestamp: Date.now()
             };
             localStorage.setItem(sessionKey, JSON.stringify(sessionState));
@@ -188,6 +194,10 @@ function StudyContent() {
 
     // Restore session state from localStorage on mount (SRS only)
     useEffect(() => {
+        // Wait until we know who the user is — otherwise we'd build a sessionKey
+        // for "anon", miss the real user's saved session, and kick off a fetchItems
+        // that races against the later restore (filtering all results out).
+        if (currentUser === null) return;
         if (mode === 'random') {
             localStorage.removeItem(sessionKey); // clear any stale random session
             fetchItems();
@@ -200,15 +210,13 @@ function StudyContent() {
                 // Only restore if session is less than 1 hour old
                 const oneHour = 60 * 60 * 1000;
                 if (Date.now() - sessionState.timestamp < oneHour) {
-                    setQueue(sessionState.queue || []);
-                    queueRef.current = sessionState.queue || [];
-                    setCurrentItem(sessionState.currentItem || null);
-                    currentItemRef.current = sessionState.currentItem || null;
-                    if (sessionState.reviewedIds) {
-                        reviewedInSession.current = new Set(sessionState.reviewedIds);
-                    }
+                    const restoredQueue = sessionState.queue || [];
+                    const restoredCurrent = sessionState.currentItem || null;
+                    setQueue(restoredQueue);
+                    queueRef.current = restoredQueue;
+                    setCurrentItem(restoredCurrent);
+                    currentItemRef.current = restoredCurrent;
                     setStats({ due: 0, studied: sessionState.stats?.studied || 0 });
-                    setLoading(false);
                     // Fetch fresh due count — don't trust stale localStorage value
                     const statsParams = new URLSearchParams();
                     if (textId) statsParams.append('text_id', textId);
@@ -217,6 +225,14 @@ function StudyContent() {
                         .then(data => setStats(prev => ({ ...prev, due: data.due_count })))
                         .catch(() => {});
                     logger.log('[Study] Restored session from localStorage');
+                    // If the restored session is empty (e.g. user previously consumed
+                    // their queue but didn't reach completion), fetch fresh items
+                    // instead of leaving the page on a forever-spinner.
+                    if (!restoredCurrent && restoredQueue.length === 0) {
+                        fetchItems();
+                    } else {
+                        setLoading(false);
+                    }
                     return;
                 }
             } catch (err) {
@@ -225,7 +241,7 @@ function StudyContent() {
         }
         // If no valid saved session, fetch new items
         fetchItems();
-    }, [sessionKey, fetchItems, mode]);
+    }, [sessionKey, fetchItems, mode, currentUser]);
 
 
     useEffect(() => {
@@ -263,6 +279,8 @@ function StudyContent() {
         queueRef.current = queueRef.current.slice(1);
         setCurrentItem(next);
         setIsFlipped(false);
+        setDictSidebarOpen(false);
+        dict.reset();
 
         // Pre-fetch if queue is low (not for random mode — we have a fixed set)
         if (mode !== 'random' && queueRef.current.length < 3) {
@@ -367,75 +385,116 @@ function StudyContent() {
         ? (completed ? "Review session complete" : `Due: ${stats.due}`)
         : (completed ? "Practice session complete" : `Remaining: ${queue.length + 1}`);
 
+    const handleNomClick = () => {
+        if (!currentItem) return;
+        setDictSidebarOpen(true);
+        if (currentItem.item_type === 'line') {
+            dict.loadLineDict(currentItem.content_id);
+        } else {
+            dict.loadCharDict(currentItem.content_id);
+        }
+    };
+
+    const handleCloseDictSidebar = () => {
+        setDictSidebarOpen(false);
+        dict.reset();
+    };
+
     return (
-        <div className="flex flex-col items-center py-1 md:py-8">
-            <StudyHeader
-                mode={mode}
-                progress={progressText}
-                title={completed ? undefined : currentItem?.source_title}
-            />
+        <div className="flex w-full py-1 md:py-8 px-4 md:px-6 relative min-h-[calc(100vh-120px)]">
+            {/* Main content area */}
+            <main className="flex-grow flex flex-col items-center">
+                <StudyHeader
+                    mode={mode}
+                    progress={progressText}
+                    title={completed ? undefined : currentItem?.source_title}
+                />
 
-            <div className="w-full max-w-[600px] mt-4 md:mt-8">
-                {completed ? (
-                    <CompletionScreen isSRS={mode === 'srs'} />
-                ) : currentItem ? (
-                    <>
-                        <StudyCard
-                            nom={currentItem.nom}
-                            contextLine={currentItem.context_line}
-                            quocNgu={currentItem.quoc_ngu}
-                            english={currentItem.english}
-                            sourceTitle={currentItem.source_title}
-                            lineNumber={currentItem.line_number}
-                            itemType={currentItem.item_type}
-                            isFlipped={isFlipped}
-                            contentId={currentItem.content_id}
-                        />
+                <div className="w-full max-w-[600px] mt-4 md:mt-8">
+                    {completed ? (
+                        <CompletionScreen isSRS={mode === 'srs'} />
+                    ) : currentItem ? (
+                        <>
+                            <StudyCard
+                                nom={currentItem.nom}
+                                contextLine={currentItem.context_line}
+                                quocNgu={currentItem.quoc_ngu}
+                                english={currentItem.english}
+                                sourceTitle={currentItem.source_title}
+                                lineNumber={currentItem.line_number}
+                                itemType={currentItem.item_type}
+                                isFlipped={isFlipped}
+                                contentId={currentItem.content_id}
+                                onNomClick={handleNomClick}
+                            />
 
-                        <ReviewControls
-                            isFlipped={isFlipped}
-                            onShow={() => setIsFlipped(true)}
-                            onSubmit={handlesubmitReview}
-                            intervals={currentItem.intervals}
-                            isPractice={mode === 'random'}
-                        />
+                            <ReviewControls
+                                isFlipped={isFlipped}
+                                onShow={() => setIsFlipped(true)}
+                                onSubmit={handlesubmitReview}
+                                intervals={currentItem.intervals}
+                                isPractice={mode === 'random'}
+                            />
 
-                        <div className="flex gap-3 mt-4 md:mt-6 w-full">
-                            <button
-                                onClick={handleUndo}
-                                disabled={!canUndo}
-                                className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
-                            >
-                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
-                            </button>
-                            <button
-                                onClick={() => setIsAddToListOpen(true)}
-                                className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
-                            >
-                                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
-                            </button>
+                            <div className="flex gap-3 mt-4 md:mt-6 w-full">
+                                <button
+                                    onClick={handleUndo}
+                                    disabled={!canUndo}
+                                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
+                                >
+                                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsAddToListOpen(true)}
+                                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
+                                >
+                                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex items-center justify-center min-h-[300px]">
+                            <div className="w-12 h-12 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin" />
                         </div>
-                    </>
-                ) : (
-                    <div className="flex items-center justify-center min-h-[300px]">
-                        <div className="w-12 h-12 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin" />
+                    )}
+                </div>
+
+                {!completed && (
+                    <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
+                        Your Progress is Automatically Saved
                     </div>
                 )}
-            </div>
+            </main>
 
-            {!completed && (
-                <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
-                    Your Progress is Automatically Saved
-                </div>
-            )}
+            <DictionaryPanel
+                variant="floating"
+                floatingOffsetPx={320}
+                mobileOpen={dictSidebarOpen}
+                desktopOpen={dictSidebarOpen}
+                onClose={handleCloseDictSidebar}
+            >
+                <DictionarySidebar
+                    sidebarView={dict.sidebarView}
+                    dictData={dict.dictData}
+                    charDictData={dict.charDictData}
+                    dictLoading={dict.dictLoading}
+                    charDictLoading={dict.charDictLoading}
+                    onViewChar={(charId) => dict.loadCharDict(charId)}
+                    onViewLine={(lineId) => dict.loadLineDict(lineId)}
+                    onBackToLine={dict.backToLine}
+                    showBackToLine={dict.canGoBack}
+                    showInlineAdd={false}
+                />
+            </DictionaryPanel>
 
+            {/* Add to List Modal - supports both study card button and sidebar */}
             {currentItem && (
                 <AddToListModal
                     isOpen={isAddToListOpen}
-                    onClose={() => setIsAddToListOpen(false)}
-                    itemId={currentItem.content_id}
-                    itemType={currentItem.item_type}
-                    itemName={currentItem.nom.replace(/<[^>]*>/g, '')}
+                    onClose={() => { setIsAddToListOpen(false); setModalItem(null); }}
+                    itemId={modalItem?.id ?? currentItem.content_id}
+                    itemType={modalItem?.type ?? currentItem.item_type}
+                    itemName={modalItem?.name ?? currentItem.nom.replace(/<[^>]*>/g, '')}
                 />
             )}
         </div>

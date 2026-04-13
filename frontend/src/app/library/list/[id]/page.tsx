@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
+import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
+import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
+import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
+import { AddToListModal } from '@/components/Study/AddToListModal';
 
 interface ListItem {
     id: number;
@@ -28,6 +32,10 @@ export default function ListDetailPage() {
 
     const [data, setData] = useState<ListDetail | null>(null);
     const [loading, setLoading] = useState(true);
+    const [dictSidebarOpen, setDictSidebarOpen] = useState(false);
+    const dict = useDictionarySidebar();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalItem, setModalItem] = useState<{ id: number; type: 'line' | 'character'; name: string } | null>(null);
 
     const fetchList = async () => {
         try {
@@ -65,6 +73,20 @@ export default function ListDetailPage() {
         }
     };
 
+    const handleItemClick = useCallback((item: ListItem) => {
+        setDictSidebarOpen(true);
+        if (item.type === 'line') {
+            dict.loadLineDict(item.id);
+        } else {
+            dict.loadCharDict(item.id);
+        }
+    }, [dict.loadLineDict, dict.loadCharDict]);
+
+    const handleCloseDictSidebar = () => {
+        setDictSidebarOpen(false);
+        dict.reset();
+    };
+
     if (loading && !data) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -76,7 +98,7 @@ export default function ListDetailPage() {
     if (!data) return null;
 
     return (
-        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 relative">
             <header className="mb-6 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div>
                     <div className="flex items-center gap-4 mb-4">
@@ -143,18 +165,20 @@ export default function ListDetailPage() {
                                         </span>
                                     </td>
                                     <td className="p-4 md:p-6 align-middle">
-                                        <Link href={`/dictionary/${item.type === 'character' ? 'char' : 'line'}/${item.id}`}>
-                                            <div className="font-nom text-2xl md:text-3xl text-text-primary group-hover:text-accent-primary transition-colors leading-tight hover:underline cursor-pointer">
-                                                {item.nom}
-                                            </div>
-                                        </Link>
+                                        <div
+                                            onClick={() => handleItemClick(item)}
+                                            className="font-nom text-2xl md:text-3xl text-text-primary group-hover:text-accent-primary transition-colors leading-tight hover:underline cursor-pointer"
+                                        >
+                                            {item.nom}
+                                        </div>
                                     </td>
                                     <td className="p-4 md:p-6 align-middle">
-                                        <Link href={`/dictionary/${item.type === 'character' ? 'char' : 'line'}/${item.id}`}>
-                                            <div className="text-sm md:text-lg font-black text-text-primary font-serif italic tracking-tight opacity-90 hover:text-accent-primary hover:underline cursor-pointer transition-colors">
-                                                {item.quoc_ngu}
-                                            </div>
-                                        </Link>
+                                        <div
+                                            onClick={() => handleItemClick(item)}
+                                            className="text-sm md:text-lg font-black text-text-primary font-serif italic tracking-tight opacity-90 hover:text-accent-primary hover:underline cursor-pointer transition-colors"
+                                        >
+                                            {item.quoc_ngu}
+                                        </div>
                                     </td>
                                     <td className="p-4 md:p-6 text-right align-middle">
                                         <Button
@@ -177,6 +201,40 @@ export default function ListDetailPage() {
                     {data.items.length} items curated in this collection
                 </p>
             </div>
+
+            <DictionaryPanel
+                variant="floating"
+                mobileOpen={dictSidebarOpen}
+                desktopOpen={dictSidebarOpen}
+                onClose={handleCloseDictSidebar}
+            >
+                <DictionarySidebar
+                    sidebarView={dict.sidebarView}
+                    dictData={dict.dictData}
+                    charDictData={dict.charDictData}
+                    dictLoading={dict.dictLoading}
+                    charDictLoading={dict.charDictLoading}
+                    onViewChar={(charId) => dict.loadCharDict(charId)}
+                    onViewLine={(lineId) => dict.loadLineDict(lineId)}
+                    onBackToLine={dict.backToLine}
+                    onAddToList={(item) => {
+                        setModalItem(item);
+                        setIsModalOpen(true);
+                    }}
+                    showBackToLine={dict.canGoBack}
+                />
+            </DictionaryPanel>
+
+            {/* Add to List Modal */}
+            {modalItem && (
+                <AddToListModal
+                    isOpen={isModalOpen}
+                    onClose={() => { setIsModalOpen(false); setModalItem(null); }}
+                    itemId={modalItem.id}
+                    itemType={modalItem.type}
+                    itemName={modalItem.name}
+                />
+            )}
         </div>
     );
 }

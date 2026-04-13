@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
+import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
+import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
+import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
+import { AddToListModal } from '@/components/Study/AddToListModal';
 
 interface LineItem {
     id: number;
@@ -46,6 +50,11 @@ export default function TextDetailPage() {
     const [editingLineId, setEditingLineId] = useState<number | null>(null);
     const [editNom, setEditNom] = useState('');
     const [editQuocNgu, setEditQuocNgu] = useState('');
+    const [selectedLine, setSelectedLine] = useState<LineItem | null>(null);
+    const [dictSidebarOpen, setDictSidebarOpen] = useState(false);
+    const dict = useDictionarySidebar();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalItem, setModalItem] = useState<{ id: number; type: 'line' | 'character'; name: string } | null>(null);
 
     const fetchContent = async (p: number) => {
         setLoading(true);
@@ -107,6 +116,23 @@ export default function TextDetailPage() {
         }
     };
 
+    const handleLineClick = useCallback((line: LineItem) => {
+        if (!line.line_dict_id && !line.char_id) return;
+        setSelectedLine(line);
+        setDictSidebarOpen(true);
+        if (line.line_dict_id) {
+            dict.loadLineDict(line.line_dict_id);
+        } else if (line.char_id) {
+            dict.loadCharDict(line.char_id);
+        }
+    }, [dict.loadLineDict, dict.loadCharDict]);
+
+    const handleCloseDictSidebar = () => {
+        setDictSidebarOpen(false);
+        setSelectedLine(null);
+        dict.reset();
+    };
+
     if (loading && !data) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -118,7 +144,7 @@ export default function TextDetailPage() {
     if (!data) return null;
 
     return (
-        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 relative">
             <header className="mb-6 md:mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div className="flex items-center gap-4 mb-4">
                     <Link href="/library">
@@ -211,12 +237,13 @@ export default function TextDetailPage() {
                                             onChange={(e) => setEditNom(e.target.value)}
                                             className="w-full font-nom text-2xl md:text-3xl text-text-primary bg-white/5 border border-accent-primary/50 rounded px-2 py-1 outline-none focus:border-accent-primary"
                                         />
-                                    ) : line.line_dict_id ? (
-                                        <Link href={`/dictionary/line/${line.line_dict_id}`}>
-                                            <div className="font-nom text-2xl md:text-3xl text-text-primary group-hover:text-accent-primary transition-colors leading-tight hover:underline cursor-pointer">
-                                                {line.nom}
-                                            </div>
-                                        </Link>
+                                    ) : (line.line_dict_id || line.char_id) ? (
+                                        <div
+                                            onClick={() => handleLineClick(line)}
+                                            className="font-nom text-2xl md:text-3xl text-text-primary group-hover:text-accent-primary transition-colors leading-tight hover:underline cursor-pointer"
+                                        >
+                                            {line.nom}
+                                        </div>
                                     ) : (
                                         <div className="font-nom text-2xl md:text-3xl text-text-primary group-hover:text-accent-primary transition-colors leading-tight">
                                             {line.nom}
@@ -231,12 +258,13 @@ export default function TextDetailPage() {
                                             onChange={(e) => setEditQuocNgu(e.target.value)}
                                             className="w-full text-sm md:text-lg font-medium text-text-primary bg-white/5 border border-accent-primary/50 rounded px-2 py-1 outline-none focus:border-accent-primary font-serif italic"
                                         />
-                                    ) : line.line_dict_id ? (
-                                        <Link href={`/dictionary/line/${line.line_dict_id}`}>
-                                            <div className="text-sm md:text-lg font-semibold text-text-primary font-serif italic tracking-tight opacity-90 hover:text-accent-primary hover:underline cursor-pointer transition-colors">
-                                                {line.quoc_ngu}
-                                            </div>
-                                        </Link>
+                                    ) : (line.line_dict_id || line.char_id) ? (
+                                        <div
+                                            onClick={() => handleLineClick(line)}
+                                            className="text-sm md:text-lg font-semibold text-text-primary font-serif italic tracking-tight opacity-90 hover:text-accent-primary hover:underline cursor-pointer transition-colors"
+                                        >
+                                            {line.quoc_ngu}
+                                        </div>
                                     ) : (
                                         <div className="text-sm md:text-lg font-semibold text-text-primary font-serif italic tracking-tight opacity-90">
                                             {line.quoc_ngu}
@@ -301,6 +329,37 @@ export default function TextDetailPage() {
                     {data.total_lines} total items
                 </p>
             </div>
+
+            <DictionaryPanel
+                variant="floating"
+                mobileOpen={dictSidebarOpen}
+                desktopOpen={dictSidebarOpen}
+                onClose={handleCloseDictSidebar}
+            >
+                <DictionarySidebar
+                    sidebarView={dict.sidebarView}
+                    dictData={dict.dictData}
+                    charDictData={dict.charDictData}
+                    dictLoading={dict.dictLoading}
+                    charDictLoading={dict.charDictLoading}
+                    onViewChar={(charId) => dict.loadCharDict(charId)}
+                    onViewLine={(lineId) => dict.loadLineDict(lineId)}
+                    onBackToLine={dict.backToLine}
+                    showBackToLine={dict.canGoBack}
+                    status={selectedLine?.status}
+                />
+            </DictionaryPanel>
+
+            {/* Add to List Modal */}
+            {modalItem && (
+                <AddToListModal
+                    isOpen={isModalOpen}
+                    onClose={() => { setIsModalOpen(false); setModalItem(null); }}
+                    itemId={modalItem.id}
+                    itemType={modalItem.type}
+                    itemName={modalItem.name}
+                />
+            )}
         </div>
     );
 }

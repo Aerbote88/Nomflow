@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
-import { useRouter } from 'next/navigation';
+import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
+import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
+import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
+import { AddToListModal } from '@/components/Study/AddToListModal';
 
 interface VocabItem {
     user_progress_id: number;
@@ -24,7 +27,26 @@ export default function VocabPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState<'all' | 'character' | 'line'>('all');
     const [displayCount, setDisplayCount] = useState(50);
-    const router = useRouter();
+    const [dictSidebarOpen, setDictSidebarOpen] = useState(false);
+    const dict = useDictionarySidebar();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalItem, setModalItem] = useState<{ id: number; type: 'line' | 'character'; name: string } | null>(null);
+    const [selectedItemType, setSelectedItemType] = useState<'character' | 'line'>('character');
+
+    const handleItemClick = useCallback((item: VocabItem) => {
+        setDictSidebarOpen(true);
+        setSelectedItemType(item.item_type);
+        if (item.item_type === 'line') {
+            dict.loadLineDict(item.content_id);
+        } else {
+            dict.loadCharDict(item.content_id);
+        }
+    }, [dict.loadLineDict, dict.loadCharDict]);
+
+    const handleCloseDictSidebar = () => {
+        setDictSidebarOpen(false);
+        dict.reset();
+    };
 
     useEffect(() => {
         api.get<VocabItem[]>('/api/user/vocab')
@@ -66,7 +88,7 @@ export default function VocabPage() {
     }
 
     return (
-        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 fade-in-stable">
+        <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 fade-in-stable relative">
             <header className="mb-6 md:mb-12">
                 <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">Your Archive</div>
                 <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">Flashcards</h1>
@@ -148,7 +170,7 @@ export default function VocabPage() {
                                     <tr
                                         key={`${item.item_type}-${item.content_id}`}
                                         className="group hover:bg-white/5 transition-colors cursor-pointer"
-                                        onClick={() => router.push(`/dictionary/${item.item_type}/${item.content_id}`)}
+                                        onClick={() => handleItemClick(item)}
                                     >
                                         <td className="px-3 md:px-6 py-3 md:py-4">
                                             <span className="font-nom text-xl md:text-2xl text-text-primary group-hover:text-accent-primary transition-colors">
@@ -189,6 +211,36 @@ export default function VocabPage() {
                     )}
                 </div>
             </GlassCard>
+
+            <DictionaryPanel
+                variant="floating"
+                mobileOpen={dictSidebarOpen}
+                desktopOpen={dictSidebarOpen}
+                onClose={handleCloseDictSidebar}
+            >
+                <DictionarySidebar
+                    sidebarView={dict.sidebarView}
+                    dictData={dict.dictData}
+                    charDictData={dict.charDictData}
+                    dictLoading={dict.dictLoading}
+                    charDictLoading={dict.charDictLoading}
+                    onViewChar={(charId) => dict.loadCharDict(charId)}
+                    onViewLine={(lineId) => dict.loadLineDict(lineId)}
+                    onBackToLine={dict.backToLine}
+                    showBackToLine={dict.canGoBack}
+                />
+            </DictionaryPanel>
+
+            {/* Add to List Modal */}
+            {modalItem && (
+                <AddToListModal
+                    isOpen={isModalOpen}
+                    onClose={() => { setIsModalOpen(false); setModalItem(null); }}
+                    itemId={modalItem.id}
+                    itemType={modalItem.type}
+                    itemName={modalItem.name}
+                />
+            )}
         </div>
     );
 }

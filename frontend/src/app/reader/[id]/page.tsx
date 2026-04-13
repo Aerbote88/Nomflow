@@ -7,6 +7,9 @@ import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 import { AddToListModal } from '@/components/Study/AddToListModal';
+import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
+import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
+import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
 
 interface LineItem {
     id: number;
@@ -34,52 +37,6 @@ interface SourceText {
     author: string;
 }
 
-interface DictCharacter {
-    id: number;
-    nom: string;
-    quoc_ngu: string;
-    order: number;
-}
-
-interface LineDictData {
-    id: number;
-    nom: string;
-    quoc_ngu: string;
-    english_translation?: string;
-    analysis?: Array<{ nom: string; quoc_ngu: string; meaning?: string }>;
-    characters: DictCharacter[];
-    stats: {
-        is_learning: boolean;
-        next_review: string | null;
-    };
-}
-
-interface CharDictExample {
-    line_id: number;
-    nom: string;
-    quoc_ngu: string;
-    source: string;
-}
-
-interface CharDictVariant {
-    id: number;
-    nom: string;
-    quoc_ngu: string;
-}
-
-interface CharDictData {
-    id: number;
-    nom: string;
-    quoc_ngu: string;
-    variants: CharDictVariant[];
-    homophones: CharDictVariant[];
-    examples: CharDictExample[];
-    stats: {
-        is_learning: boolean;
-        next_review: string | null;
-    };
-}
-
 const WORD_LIST_AUTHORS = ['Chunom.org', 'Digitizing Vietnam Team'];
 
 export default function ReaderDetailPage() {
@@ -97,16 +54,12 @@ export default function ReaderDetailPage() {
 
     // Right panel: dictionary data
     const [selectedLine, setSelectedLine] = useState<LineItem | null>(null);
-    const [dictData, setDictData] = useState<LineDictData | null>(null);
-    const [dictLoading, setDictLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalItem, setModalItem] = useState<{ id: number; type: 'line' | 'character'; name: string } | null>(null);
     const [showQuocNgu, setShowQuocNgu] = useState(true);
 
-    // Character dictionary view in right sidebar
-    const [charDictData, setCharDictData] = useState<CharDictData | null>(null);
-    const [charDictLoading, setCharDictLoading] = useState(false);
-    const [sidebarView, setSidebarView] = useState<'line' | 'char'>('line');
+    // Dictionary sidebar hook
+    const dict = useDictionarySidebar();
 
     const fetchContent = async (p: number) => {
         setLoading(true);
@@ -124,7 +77,7 @@ export default function ReaderDetailPage() {
     useEffect(() => {
         fetchContent(1);
         setSelectedLine(null);
-        setDictData(null);
+        dict.reset();
     }, [textId]);
 
     useEffect(() => {
@@ -135,40 +88,18 @@ export default function ReaderDetailPage() {
 
     const handleLineClick = useCallback(async (line: LineItem) => {
         if (!line.line_dict_id) return;
-
         setSelectedLine(line);
-        setSidebarView('line');
-        setCharDictData(null);
-        setDictLoading(true);
-        try {
-            const resp = await apiFetch<LineDictData>(`dictionary/line/${line.line_dict_id}`);
-            setDictData(resp);
-        } catch (err) {
-            logger.error('Failed to load dictionary data:', err);
-            setDictData(null);
-        } finally {
-            setDictLoading(false);
-        }
-    }, []);
+        dict.loadLineDict(line.line_dict_id);
+    }, [dict.loadLineDict]);
 
     const handleViewChar = useCallback(async (charId: number) => {
-        setSidebarView('char');
-        setCharDictLoading(true);
-        try {
-            const resp = await apiFetch<CharDictData>(`dictionary/char/${charId}`);
-            setCharDictData(resp);
-        } catch (err) {
-            logger.error('Failed to load char dictionary data:', err);
-            setCharDictData(null);
-        } finally {
-            setCharDictLoading(false);
-        }
-    }, []);
+        dict.loadCharDict(charId);
+    }, [dict.loadCharDict]);
 
     const handlePageChange = (p: number) => {
         if (p < 1 || (data && p > data.total_pages)) return;
         setSelectedLine(null);
-        setDictData(null);
+        dict.reset();
         fetchContent(p);
     };
 
@@ -357,290 +288,35 @@ export default function ReaderDetailPage() {
                 </div>
             </main>
 
-            {/* Right Sidebar - Dictionary / Toolbox */}
-            <aside className={`
-                ${selectedLine ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
-                fixed lg:static inset-y-0 right-0 z-[70]
-                w-80 lg:w-72 shrink-0
-                bg-bg-primary/95 lg:bg-transparent
-                backdrop-blur-xl lg:backdrop-blur-none
-                border-l border-white/10 lg:border-0
-                transition-transform duration-300
-                overflow-y-auto
-                pt-20 lg:pt-0
-                px-4 lg:px-0
-            `}>
-                {/* Mobile close button */}
-                {selectedLine && (
-                    <button
-                        onClick={() => { setSelectedLine(null); setDictData(null); }}
-                        className="lg:hidden absolute top-4 left-4 text-text-secondary hover:text-text-primary transition-colors"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                )}
-
-                <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.3em] mb-4">
-                    Dictionary
-                </div>
-
+            <DictionaryPanel
+                variant="sidebar"
+                mobileOpen={!!selectedLine}
+                desktopOpen={true}
+                onClose={() => { setSelectedLine(null); dict.reset(); }}
+            >
                 {!selectedLine ? (
                     <div className="text-text-secondary/40 text-sm italic text-center py-12">
                         Tap a line to view its dictionary entry
                     </div>
-                ) : (dictLoading || charDictLoading) ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="w-8 h-8 border-3 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin" />
-                    </div>
-                ) : sidebarView === 'char' && charDictData ? (
-                    /* ===== Character Dictionary View ===== */
-                    <div className="space-y-4 animate-in fade-in duration-200">
-                        {/* Back to line view */}
-                        <button
-                            onClick={() => setSidebarView('line')}
-                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
-                            </svg>
-                            Back to Line
-                        </button>
-
-                        {/* Character header */}
-                        <GlassCard className="!p-4 border-white/5">
-                            <div className="font-nom text-4xl text-text-primary text-center leading-relaxed mb-1">
-                                {charDictData.nom}
-                            </div>
-                            <div className="text-sm font-serif italic text-text-secondary/80 text-center">
-                                {charDictData.quoc_ngu}
-                            </div>
-                        </GlassCard>
-
-                        {/* Variants */}
-                        {charDictData.variants.length > 0 && (
-                            <GlassCard className="!p-4 border-white/5">
-                                <div className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                                    Variants
-                                </div>
-                                <div className="space-y-1">
-                                    {charDictData.variants.map((v) => (
-                                        <div key={v.id} className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors group/var">
-                                            <span className="font-nom text-lg text-text-primary w-8 text-center shrink-0">
-                                                {v.nom}
-                                            </span>
-                                            <span className="text-xs font-serif italic text-text-secondary/70 flex-grow">
-                                                {v.quoc_ngu}
-                                            </span>
-                                            <button
-                                                onClick={() => handleViewChar(v.id)}
-                                                className="text-[9px] font-black uppercase tracking-widest px-2 py-1 text-text-secondary/50 hover:text-accent-primary opacity-0 group-hover/var:opacity-100 transition-all"
-                                            >
-                                                View
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </GlassCard>
-                        )}
-
-                        {/* Homophones */}
-                        {charDictData.homophones.length > 0 && (
-                            <GlassCard className="!p-4 border-white/5">
-                                <div className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                                    Homophones
-                                </div>
-                                <div className="space-y-1">
-                                    {charDictData.homophones.map((h) => (
-                                        <div key={h.id} className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors group/homo">
-                                            <span className="font-nom text-lg text-text-primary w-8 text-center shrink-0">
-                                                {h.nom}
-                                            </span>
-                                            <span className="text-xs font-serif italic text-text-secondary/70 flex-grow">
-                                                {h.quoc_ngu}
-                                            </span>
-                                            <button
-                                                onClick={() => handleViewChar(h.id)}
-                                                className="text-[9px] font-black uppercase tracking-widest px-2 py-1 text-text-secondary/50 hover:text-accent-primary opacity-0 group-hover/homo:opacity-100 transition-all"
-                                            >
-                                                View
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </GlassCard>
-                        )}
-
-                        {/* Examples */}
-                        {charDictData.examples.length > 0 && (
-                            <GlassCard className="!p-4 border-white/5">
-                                <div className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                                    Examples
-                                </div>
-                                <div className="space-y-3">
-                                    {charDictData.examples.slice(0, 5).map((ex) => (
-                                        <div key={ex.line_id} className="px-2 py-1.5">
-                                            <div
-                                                className="font-nom text-base text-text-primary leading-relaxed"
-                                                dangerouslySetInnerHTML={{ __html: ex.nom }}
-                                            />
-                                            <div className="text-xs font-serif italic text-text-secondary/60 mt-0.5">
-                                                {ex.quoc_ngu}
-                                            </div>
-                                            <div className="text-[9px] text-text-secondary/30 mt-0.5">
-                                                {ex.source}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </GlassCard>
-                        )}
-
-                        {/* Add Character to List */}
-                        <Button
-                            onClick={() => {
-                                setModalItem({ id: charDictData.id, type: 'character', name: charDictData.nom });
-                                setIsModalOpen(true);
-                            }}
-                            className="w-full font-black uppercase tracking-widest text-[10px] py-3.5 shadow-xl shadow-accent-primary/20"
-                        >
-                            <span className="flex items-center justify-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Add Character to List
-                            </span>
-                        </Button>
-                    </div>
-                ) : dictData ? (
-                    /* ===== Line Dictionary View ===== */
-                    <div className="space-y-4 animate-in fade-in duration-200">
-                        {/* Nom + Quoc Ngu */}
-                        <GlassCard className="!p-4 border-white/5">
-                            <div className="font-nom text-2xl text-text-primary text-center leading-relaxed mb-2">
-                                {dictData.nom}
-                            </div>
-                            <div className="text-sm font-serif italic text-text-secondary/80 text-center">
-                                {dictData.quoc_ngu}
-                            </div>
-                            {dictData.english_translation && (
-                                <div className="text-xs text-text-secondary/60 text-center mt-2 pt-2 border-t border-white/5">
-                                    {dictData.english_translation}
-                                </div>
-                            )}
-                        </GlassCard>
-
-                        {/* Character Breakdown */}
-                        {dictData.characters.length > 0 && (
-                            <GlassCard className="!p-4 border-white/5">
-                                <div className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                                    Character Breakdown
-                                </div>
-                                <div className="space-y-1">
-                                    {dictData.characters.map((char) => (
-                                        <div key={char.id} className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors group/char">
-                                            <span className="font-nom text-lg text-text-primary w-8 text-center shrink-0">
-                                                {char.nom}
-                                            </span>
-                                            <span className="text-xs font-serif italic text-text-secondary/70 flex-grow">
-                                                {char.quoc_ngu}
-                                            </span>
-                                            <button
-                                                onClick={() => handleViewChar(char.id)}
-                                                className="text-[9px] font-black uppercase tracking-widest px-2 py-1 text-text-secondary/50 hover:text-accent-primary opacity-0 group-hover/char:opacity-100 transition-all"
-                                            >
-                                                View
-                                            </button>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => {
-                                                    setModalItem({ id: char.id, type: 'character', name: char.nom });
-                                                    setIsModalOpen(true);
-                                                }}
-                                                className="text-[9px] font-black uppercase tracking-widest px-2 py-1 opacity-0 group-hover/char:opacity-100 transition-opacity"
-                                            >
-                                                + Add
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </GlassCard>
-                        )}
-
-                        {/* Analysis */}
-                        {dictData.analysis && dictData.analysis.length > 0 && (
-                            <GlassCard className="!p-4 border-white/5">
-                                <div className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                                    Analysis
-                                </div>
-                                <div className="space-y-2">
-                                    {dictData.analysis.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-3 px-2 py-1.5">
-                                            <span className="font-nom text-base text-text-primary shrink-0">
-                                                {item.nom}
-                                            </span>
-                                            <div className="text-xs">
-                                                <span className="font-serif italic text-text-secondary/70">{item.quoc_ngu}</span>
-                                                {item.meaning && (
-                                                    <span className="text-text-secondary/50 ml-1">— {item.meaning}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </GlassCard>
-                        )}
-
-                        {/* Status */}
-                        <GlassCard className="!p-4 border-white/5">
-                            <div className="flex items-center justify-between">
-                                <div className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">
-                                    Status
-                                </div>
-                                {selectedLine.status === 'learned' ? (
-                                    <span className="px-2 py-0.5 rounded-md text-[8px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">
-                                        Learned
-                                    </span>
-                                ) : selectedLine.status === 'learning' ? (
-                                    <span className="px-2 py-0.5 rounded-md text-[8px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-widest">
-                                        Learning
-                                    </span>
-                                ) : (
-                                    <span className="px-2 py-0.5 rounded-md text-[8px] font-black bg-white/5 text-text-secondary/40 border border-white/10 uppercase tracking-widest">
-                                        New
-                                    </span>
-                                )}
-                            </div>
-                        </GlassCard>
-
-                        {/* Add Line to List Button */}
-                        <Button
-                            onClick={() => {
-                                setModalItem({ id: selectedLine.line_dict_id!, type: 'line', name: selectedLine.nom });
-                                setIsModalOpen(true);
-                            }}
-                            className="w-full font-black uppercase tracking-widest text-[10px] py-3.5 shadow-xl shadow-accent-primary/20"
-                        >
-                            <span className="flex items-center justify-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Add Line to List
-                            </span>
-                        </Button>
-                    </div>
-                ) : null}
-            </aside>
-
-            {/* Mobile overlay for right sidebar */}
-            {selectedLine && (
-                <div
-                    className="lg:hidden fixed inset-0 bg-black/50 z-[60]"
-                    onClick={() => { setSelectedLine(null); setDictData(null); }}
-                />
-            )}
+                ) : (
+                    <DictionarySidebar
+                        sidebarView={dict.sidebarView}
+                        dictData={dict.dictData}
+                        charDictData={dict.charDictData}
+                        dictLoading={dict.dictLoading}
+                        charDictLoading={dict.charDictLoading}
+                        onViewChar={handleViewChar}
+                        onViewLine={(lineId) => dict.loadLineDict(lineId)}
+                        onBackToLine={dict.backToLine}
+                        showBackToLine={dict.canGoBack}
+                        onAddToList={(item) => {
+                            setModalItem(item);
+                            setIsModalOpen(true);
+                        }}
+                        status={selectedLine.status}
+                    />
+                )}
+            </DictionaryPanel>
 
             {/* Add to List Modal */}
             {modalItem && (
