@@ -14,6 +14,12 @@ export interface AnalysisItem {
     explanation?: string;
 }
 
+export interface LineDictSource {
+    text_id: number;
+    text_title: string;
+    line_number: number;
+}
+
 export interface LineDictData {
     id: number;
     nom: string;
@@ -21,6 +27,7 @@ export interface LineDictData {
     english_translation?: string;
     analysis?: AnalysisItem[] | { breakdown?: AnalysisItem[]; compounds?: AnalysisItem[] };
     characters: DictCharacter[];
+    sources?: LineDictSource[];
     stats: {
         is_learning: boolean;
         next_review: string | null;
@@ -268,6 +275,23 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                     {dictData.english_translation && (
                         <div className="text-sm text-text-secondary/60 text-center mt-2 pt-2 border-t border-white/5">
                             {dictData.english_translation}
+                        </div>
+                    )}
+                    {dictData.sources && dictData.sources.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-white/5 space-y-0.5">
+                            {dictData.sources.slice(0, 3).map((src, i) => (
+                                <div
+                                    key={`${src.text_id}-${src.line_number}-${i}`}
+                                    className="text-[10px] font-black text-text-secondary/50 uppercase tracking-[0.2em] text-center"
+                                >
+                                    {src.text_title} <span className="opacity-40 mx-1">·</span> Line {src.line_number}
+                                </div>
+                            ))}
+                            {dictData.sources.length > 3 && (
+                                <div className="text-[10px] font-black text-text-secondary/30 uppercase tracking-[0.2em] text-center">
+                                    +{dictData.sources.length - 3} more
+                                </div>
+                            )}
                         </div>
                     )}
                 </GlassCard>

@@ -2558,6 +2558,18 @@ def get_dictionary_line_data(line_id: int, user: User = Depends(get_current_user
     # Get user stats for this line
     prog = session.exec(select(UserProgress).where(UserProgress.user_id == user.id, UserProgress.item_type == "line", UserProgress.item_id == ld.id)).first()
 
+    # Provenance: which source text(s) and line number(s) reference this Expression
+    sources_query = (
+        select(SourceText.id, SourceText.title, Line.line_number)
+        .join(Line, Line.text_id == SourceText.id)
+        .where(Line.line_dictionary_id == ld.id)
+        .order_by(SourceText.title, Line.line_number)
+    )
+    sources_data = [
+        {"text_id": tid, "text_title": title, "line_number": ln}
+        for tid, title, ln in session.exec(sources_query).all()
+    ]
+
     return {
         "id": ld.id,
         "nom": ld.nom_text,
@@ -2565,6 +2577,7 @@ def get_dictionary_line_data(line_id: int, user: User = Depends(get_current_user
         "english_translation": ld.english_translation,
         "analysis": json.loads(ld.analysis) if ld.analysis else None,
         "characters": chars_data,
+        "sources": sources_data,
         "stats": {
              "is_learning": prog.is_learning if prog else False,
              "next_review": prog.next_review_due if prog else None
@@ -2588,6 +2601,29 @@ def submit_feedback(
     )
     session.add(entry)
     session.commit()
+
+    notify_to = os.environ.get("FEEDBACK_NOTIFY_EMAIL", "")
+    if notify_to:
+        try:
+            resend.api_key = os.environ.get("RESEND_API_KEY", "")
+            from_addr = os.environ.get("RESEND_FROM_EMAIL", "NômFlow <noreply@nomflow.app>")
+            submitter = user.username if user else "anonymous"
+            safe_message = (entry.message or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+            resend.Emails.send({
+                "from": from_addr,
+                "to": [notify_to],
+                "subject": f"[NômFlow Feedback] {entry.type} from {submitter}",
+                "html": f"""
+                    <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; color: #333;">
+                        <h2 style="color: #d97706;">New {entry.type} feedback</h2>
+                        <p style="color: #666; font-size: 13px;">From: <strong>{submitter}</strong></p>
+                        <div style="padding: 16px; background: #f7f7f7; border-radius: 8px; white-space: pre-wrap;">{safe_message}</div>
+                    </div>
+                """
+            })
+        except Exception as e:
+            print(f"Feedback notification email error: {e}")
+
     return {"status": "ok"}
 
 @app.get("/api/feedback")

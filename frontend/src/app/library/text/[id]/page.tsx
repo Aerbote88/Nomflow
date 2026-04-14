@@ -46,6 +46,7 @@ export default function TextDetailPage() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [gotoPage, setGotoPage] = useState('');
+    const [gotoLine, setGotoLine] = useState('');
     const [user, setUser] = useState<UserInfo | null>(null);
     const [editingLineId, setEditingLineId] = useState<number | null>(null);
     const [editNom, setEditNom] = useState('');
@@ -84,6 +85,15 @@ export default function TextDetailPage() {
         e.preventDefault();
         const p = parseInt(gotoPage);
         if (!isNaN(p)) handlePageChange(p);
+    };
+
+    const handleGotoLine = (e: React.FormEvent) => {
+        e.preventDefault();
+        const line = parseInt(gotoLine);
+        if (isNaN(line) || !data || line < 1 || line > data.total_lines) return;
+        const linesPerPage = Math.ceil(data.total_lines / data.total_pages);
+        const targetPage = Math.ceil(line / linesPerPage);
+        handlePageChange(targetPage);
     };
 
     const startEdit = (line: LineItem) => {
@@ -193,18 +203,32 @@ export default function TextDetailPage() {
                     </Button>
                 </div>
 
-                <form onSubmit={handleGoto} className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Jump to:</span>
-                    <input
-                        type="number"
-                        value={gotoPage}
-                        onChange={(e) => setGotoPage(e.target.value)}
-                        className="w-16 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-center font-black outline-none focus:border-accent-primary/50"
-                        min={1}
-                        max={data.total_pages}
-                    />
-                    <Button type="submit" variant="ghost" className="text-[10px] font-black p-2">GO</Button>
-                </form>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <form onSubmit={handleGoto} className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Page:</span>
+                        <input
+                            type="number"
+                            value={gotoPage}
+                            onChange={(e) => setGotoPage(e.target.value)}
+                            className="w-16 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-center font-black outline-none focus:border-accent-primary/50"
+                            min={1}
+                            max={data.total_pages}
+                        />
+                        <Button type="submit" variant="ghost" className="text-[10px] font-black p-2">GO</Button>
+                    </form>
+                    <form onSubmit={handleGotoLine} className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Line:</span>
+                        <input
+                            type="number"
+                            value={gotoLine}
+                            onChange={(e) => setGotoLine(e.target.value)}
+                            className="w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-center font-black outline-none focus:border-accent-primary/50"
+                            min={1}
+                            max={data.total_lines}
+                        />
+                        <Button type="submit" variant="ghost" className="text-[10px] font-black p-2">GO</Button>
+                    </form>
+                </div>
             </GlassCard>
 
             {/* Content Table */}
@@ -225,7 +249,7 @@ export default function TextDetailPage() {
                         {data.lines.map((line) => (
                             <tr key={line.id} className="group hover:bg-white/5 transition-colors duration-300">
                                 <td className="p-4 md:p-6 text-center align-middle">
-                                    <span className="text-[10px] font-mono font-black text-text-secondary/30 group-hover:text-text-secondary transition-colors">
+                                    <span className="text-xs font-mono font-black text-text-secondary/70 group-hover:text-accent-primary transition-colors">
                                         {line.line_number}
                                     </span>
                                 </td>
