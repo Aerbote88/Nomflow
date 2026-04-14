@@ -139,7 +139,7 @@ async def get_current_user(request: Request, session: Session = Depends(get_sess
         
     # Remove 'Bearer ' prefix
     if token.startswith("Bearer "):
-        token = token.split(" ")[1]
+        token = token.split(" ", 1)[1]
         
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -163,14 +163,14 @@ async def get_current_user(request: Request, session: Session = Depends(get_sess
 async def get_optional_user(request: Request, session: Session = Depends(get_session)):
     token = request.cookies.get("access_token")
     if not token: return None
-    if token.startswith("Bearer "): token = token.split(" ")[1]
-    
+    if token.startswith("Bearer "): token = token.split(" ", 1)[1]
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if not username: return None
         return session.exec(select(User).where(User.username == username)).first()
-    except:
+    except JWTError:
         return None
 
 # --- Auth Endpoints ---
@@ -330,8 +330,8 @@ def reset_password(req: ResetPasswordRequest, session: Session = Depends(get_ses
 
 # Helper Models
 class ReviewSubmission(BaseModel):
-    item_id: int 
-    quality: int 
+    item_id: int
+    quality: int = Field(ge=0, le=3)
 
 class DashboardStats(BaseModel):
     due_count: int
@@ -1456,7 +1456,7 @@ def browse_content(text_id: Optional[int] = None, page: int = 1, limit: int = 20
 
     return BrowseResponse(
         total_lines=total,
-        total_pages=(total // limit) + 1,
+        total_pages=max(1, (total + limit - 1) // limit),
         current_page=page,
         text_title=text_title,
         author=author,

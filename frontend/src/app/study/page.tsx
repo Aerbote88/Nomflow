@@ -122,10 +122,14 @@ function StudyContent() {
 
             logger.log(`[Study Debug] Fetching items. In-flight IDs:`, inFlight);
 
-            const data = await apiFetch<any>(`study/next?${params.toString()}`);
+            type StudyNextDone = { status: 'done' };
+            type StudyNextResponse = StudyNextDone | StudyItem | StudyItem[];
+            const isDoneResponse = (d: StudyNextResponse): d is StudyNextDone =>
+                !Array.isArray(d) && 'status' in d && d.status === 'done';
+            const data = await apiFetch<StudyNextResponse>(`study/next?${params.toString()}`);
             logger.log(`[Study Debug] Received data:`, data);
 
-            if (data.status === 'done') {
+            if (isDoneResponse(data)) {
                 noMoreRemaining.current = true;
                 if (queueRef.current.length === 0 && !currentItemRef.current) {
                     setCompleted(true);
@@ -156,8 +160,9 @@ function StudyContent() {
                     setQueue(prev => [...prev, ...uniqueNewItems]);
                     queueRef.current = [...queueRef.current, ...uniqueNewItems];
                     // Prevent concurrent race condition where a stale prefetch overwrites our optimistically decremented due count
-                    if (uniqueNewItems[0]?.session_stats && activeSubmissionsRef.current === 0) {
-                        setStats(prev => ({ ...prev, due: uniqueNewItems[0].session_stats.due }));
+                    const firstStats = uniqueNewItems[0]?.session_stats;
+                    if (firstStats && activeSubmissionsRef.current === 0) {
+                        setStats(prev => ({ ...prev, due: firstStats.due }));
                     }
                 } else {
                     logger.log(`[Study Debug] No new unique items to add`);

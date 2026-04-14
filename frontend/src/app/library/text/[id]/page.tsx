@@ -179,7 +179,17 @@ export default function TextDetailPage() {
 
             {/* Pagination Controls */}
             <GlassCard className="mb-6 p-4 border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handlePageChange(1)}
+                        disabled={page === 1}
+                        className="font-black py-2 px-3 text-[10px]"
+                        title="First page"
+                    >
+                        ⟪
+                    </Button>
                     <Button
                         variant="secondary"
                         size="sm"
@@ -200,6 +210,16 @@ export default function TextDetailPage() {
                         className="font-black py-2 px-4 text-[10px]"
                     >
                         NEXT
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handlePageChange(data.total_pages)}
+                        disabled={page === data.total_pages}
+                        className="font-black py-2 px-3 text-[10px]"
+                        title="Last page"
+                    >
+                        ⟫
                     </Button>
                 </div>
 
