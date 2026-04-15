@@ -37,6 +37,7 @@ export function Navbar() {
         { href: '/dashboard', label: 'Dashboard' },
         { href: '/library', label: 'Library' },
         { href: '/reader', label: 'Reader' },
+        { href: '/writing-practice', label: 'Writing' },
         { href: '/leaderboard', label: 'Leaderboard' },
         { href: '/settings', label: 'Settings' },
     ];
