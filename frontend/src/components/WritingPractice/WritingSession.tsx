@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui';
 import { CharacterWriter } from './CharacterWriter';
+import { loadCharacter } from '@/lib/strokeData';
 import type { WritingEntry } from '@/app/writing-practice/page';
 
 type Props = {
@@ -53,6 +54,18 @@ export function WritingSession({ entries, title }: Props) {
     useEffect(() => {
         return () => clearTimer();
     }, []);
+
+    // Prefetch stroke data for the characters immediately around the current
+    // index so navigating forward/back is instant once the user gets rolling.
+    useEffect(() => {
+        if (entries.length === 0) return;
+        const windowSize = 5;
+        const start = Math.max(0, index - 1);
+        const end = Math.min(entries.length, index + windowSize);
+        for (let i = start; i < end; i++) {
+            loadCharacter(entries[i].character).catch(() => {});
+        }
+    }, [index, entries]);
 
     const next = useCallback(() => {
         clearTimer();

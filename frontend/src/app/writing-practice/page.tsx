@@ -23,9 +23,31 @@ type TextCharacterSequence = {
     entries: WritingEntry[];
 };
 
+const SESSION_CACHE_KEY = 'writing-practice:kieu-sequence';
+
 function isKieu(t: SourceText): boolean {
     const title = t.title.toLowerCase();
     return title.includes('kiều') || title.includes('kieu');
+}
+
+function readCache(): TextCharacterSequence | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = sessionStorage.getItem(SESSION_CACHE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as TextCharacterSequence;
+    } catch {
+        return null;
+    }
+}
+
+function writeCache(seq: TextCharacterSequence): void {
+    if (typeof window === 'undefined') return;
+    try {
+        sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(seq));
+    } catch {
+        // Quota exceeded or other storage errors — ignore.
+    }
 }
 
 export default function WritingPracticePage() {
@@ -34,7 +56,20 @@ export default function WritingPracticePage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        // Kick off hanzi-writer import immediately so it's ready by the time
+        // the first character mounts instead of starting on-demand.
+        import('hanzi-writer').catch(() => {});
+
         let cancelled = false;
+
+        const cached = readCache();
+        if (cached) {
+            setEntries(cached.entries);
+            setTitle(cached.title);
+            return () => {
+                cancelled = true;
+            };
+        }
 
         (async () => {
             try {
@@ -51,6 +86,7 @@ export default function WritingPracticePage() {
                 if (cancelled) return;
                 setEntries(seq.entries);
                 setTitle(seq.title);
+                writeCache(seq);
             } catch (e) {
                 if (cancelled) return;
                 setError(e instanceof Error ? e.message : String(e));
