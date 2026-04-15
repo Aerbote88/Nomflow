@@ -6,8 +6,10 @@ import { loadCharacter, type CharacterData } from '@/lib/strokeData';
 
 type Props = {
     character: string;
+    quocNgu?: string;
     size?: number;
     onUnavailable?: () => void;
+    onSuccess?: () => void;
 };
 
 type HanziWriterInstance = {
@@ -27,9 +29,27 @@ type HanziWriterInstance = {
     updateColor: (type: string, color: string, opts?: { duration?: number }) => void;
 };
 
-export function CharacterWriter({ character, size = 320, onUnavailable }: Props) {
+function computeResponsiveSize(max: number): number {
+    if (typeof window === 'undefined') return max;
+    const padding = 48; // breathing room for page gutters
+    return Math.min(max, Math.max(220, window.innerWidth - padding));
+}
+
+export function CharacterWriter({
+    character,
+    quocNgu,
+    size,
+    onUnavailable,
+    onSuccess,
+}: Props) {
     const hostRef = useRef<HTMLDivElement>(null);
     const writerRef = useRef<HanziWriterInstance | null>(null);
+    const onSuccessRef = useRef(onSuccess);
+    const onUnavailableRef = useRef(onUnavailable);
+    onSuccessRef.current = onSuccess;
+    onUnavailableRef.current = onUnavailable;
+
+    const [resolvedSize] = useState(() => size ?? computeResponsiveSize(320));
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [unavailable, setUnavailable] = useState(false);
@@ -40,7 +60,7 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
         const w = writerRef.current;
         if (!w) return;
         w.hideOutline();
-        w.updateColor('drawingColor', '#ffad1d', { duration: 0 });
+        w.updateColor('drawingColor', '#fafafa', { duration: 0 });
         setSucceeded(false);
         setMistakes(0);
         w.quiz({
@@ -49,7 +69,7 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
             onComplete: (summary) => {
                 setMistakes(summary.totalMistakes);
                 setSucceeded(true);
-                w.updateColor('drawingColor', '#4ade80', { duration: 300 });
+                onSuccessRef.current?.();
             },
         });
     };
@@ -69,7 +89,7 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
                 if (!data) {
                     setUnavailable(true);
                     setLoading(false);
-                    onUnavailable?.();
+                    onUnavailableRef.current?.();
                     return;
                 }
                 const mod = await import('hanzi-writer');
@@ -78,13 +98,14 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
                 if (!hostRef.current) return;
                 hostRef.current.innerHTML = '';
                 writerRef.current = HanziWriter.create(hostRef.current, character, {
-                    width: size,
-                    height: size,
+                    width: resolvedSize,
+                    height: resolvedSize,
                     padding: 12,
                     strokeColor: '#fafafa',
-                    radicalColor: '#ffad1d',
+                    radicalColor: '#fafafa',
                     outlineColor: '#3f3f46',
-                    drawingColor: '#ffad1d',
+                    drawingColor: '#fafafa',
+                    highlightColor: '#fafafa',
                     strokeAnimationSpeed: 1.6,
                     delayBetweenStrokes: 80,
                     showOutline: false,
@@ -96,7 +117,7 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
                 }) as unknown as HanziWriterInstance;
                 const svg = hostRef.current.querySelector('svg');
                 if (svg) {
-                    svg.style.transform = `translateY(-${Math.round(size * 0.05)}px)`;
+                    svg.style.transform = `translateY(-${Math.round(resolvedSize * 0.05)}px)`;
                 }
                 setLoading(false);
                 startQuiz();
@@ -113,14 +134,14 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
                 writerRef.current?.cancelQuiz?.();
             } catch {}
         };
-    }, [character, size, onUnavailable]);
+    }, [character, resolvedSize]);
 
     const animate = () => {
         const w = writerRef.current;
         if (!w) return;
         w.cancelQuiz?.();
         setSucceeded(false);
-        w.updateColor('drawingColor', '#ffad1d', { duration: 0 });
+        w.updateColor('drawingColor', '#fafafa', { duration: 0 });
         w.animateCharacter({
             onComplete: ({ canceled }) => {
                 if (canceled) return;
@@ -140,7 +161,7 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
     };
 
     return (
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-1 sm:gap-3">
             <div className="relative">
                 <div
                     ref={hostRef}
@@ -149,31 +170,37 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
                             ? 'border-green-400 shadow-[0_0_40px_rgba(74,222,128,0.5)]'
                             : 'border-accent-gold/20'
                     }`}
-                    style={{ width: size, height: size }}
+                    style={{ width: resolvedSize, height: resolvedSize }}
                 />
                 {succeeded && (
-                    <div className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-green-500 text-white text-xs font-bold uppercase tracking-widest shadow-lg animate-in fade-in zoom-in duration-300">
+                    <div className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-green-500 text-white text-xs font-bold uppercase tracking-widest shadow-lg animate-in fade-in duration-300">
                         ✓ {mistakes === 0 ? 'Perfect!' : 'Correct'}
                     </div>
                 )}
             </div>
-            {loading && !unavailable && (
-                <div className="text-text-secondary text-sm">Loading…</div>
-            )}
-            {unavailable && (
-                <div className="text-text-secondary text-sm max-w-xs text-center">
-                    No stroke data for <span className="font-nom text-base">{character}</span>
-                </div>
-            )}
-            {error && (
-                <div className="text-red-400 text-sm max-w-xs text-center">{error}</div>
-            )}
-            <div className="flex gap-3">
+            <div className="h-7 flex items-center justify-center text-sm">
+                {loading && !unavailable && (
+                    <span className="text-text-secondary">Loading…</span>
+                )}
+                {!loading && !error && !unavailable && quocNgu && (
+                    <span className="text-text-primary font-serif text-base lowercase">
+                        {quocNgu}
+                    </span>
+                )}
+                {unavailable && (
+                    <span className="text-text-secondary max-w-xs text-center">
+                        No stroke data for <span className="font-nom text-base">{character}</span>
+                    </span>
+                )}
+                {error && <span className="text-red-400 max-w-xs text-center">{error}</span>}
+            </div>
+            <div className="flex gap-2">
                 <Button
                     variant="primary"
                     size="sm"
                     onClick={animate}
                     disabled={loading || !!error || unavailable}
+                    className="!px-3 !py-1 text-xs"
                 >
                     Animate
                 </Button>
@@ -182,6 +209,7 @@ export function CharacterWriter({ character, size = 320, onUnavailable }: Props)
                     size="sm"
                     onClick={peek}
                     disabled={loading || !!error || unavailable}
+                    className="!px-3 !py-1 text-xs"
                 >
                     Hint
                 </Button>

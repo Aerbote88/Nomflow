@@ -2435,21 +2435,37 @@ def get_text_character_sequence(text_id: int, session: Session = Depends(get_ses
         select(Line)
         .where(Line.text_id == text_id)
         .order_by(Line.line_number)
-        .options(selectinload(Line.line_dict), selectinload(Line.dictionary_entry))
+        .options(
+            selectinload(Line.line_dict)
+            .selectinload(Expression.characters)
+            .selectinload(ExpressionCharacter.dictionary_entry),
+            selectinload(Line.dictionary_entry),
+        )
     ).all()
     entries: list[dict] = []
     seen: set[str] = set()
     for line in lines:
         nom = line.nom_text or ""
-        quoc_ngu = line.quoc_ngu_text or ""
+        line_quoc_ngu = line.quoc_ngu_text or ""
+
+        # Build a map: position-in-line -> quoc_ngu, using ExpressionCharacter ordering
+        per_char: dict[str, str] = {}
+        if line.line_dict and line.line_dict.characters:
+            for ec in line.line_dict.characters:
+                if ec.dictionary_entry and ec.dictionary_entry.nom_char:
+                    per_char.setdefault(ec.dictionary_entry.nom_char, ec.dictionary_entry.quoc_ngu or "")
+        elif line.dictionary_entry and line.dictionary_entry.nom_char:
+            per_char.setdefault(line.dictionary_entry.nom_char, line.dictionary_entry.quoc_ngu or "")
+
         for ch in nom:
             if not ch.strip() or ch in seen:
                 continue
             seen.add(ch)
             entries.append({
                 "character": ch,
+                "character_quoc_ngu": per_char.get(ch, ""),
                 "line_nom": nom,
-                "line_quoc_ngu": quoc_ngu,
+                "line_quoc_ngu": line_quoc_ngu,
                 "line_number": line.line_number,
             })
     return {"title": text.title, "entries": entries}
