@@ -74,10 +74,6 @@ export default function DashboardPage() {
 
     return (
         <div className="flex flex-col items-center py-4 md:py-8 fade-in-stable">
-            <header className="hidden md:block text-center mb-8">
-                <h1 className="text-4xl md:text-5xl font-bold font-display text-text-primary mb-2">NômFlow</h1>
-                <p className="text-text-secondary text-lg">The Digital Tool for Nôm Mastery</p>
-            </header>
 
             {/* Stats Section */}
             <div className="w-full max-w-4xl space-y-3 md:space-y-6">

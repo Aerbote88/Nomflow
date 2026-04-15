@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui';
@@ -46,9 +47,14 @@ export function Navbar() {
         <nav className="w-full mb-4 md:mb-8 border-b border-accent-gold/10 pb-3 md:pb-6 animate-in fade-in duration-700 relative z-[100]">
             <div className="flex justify-between items-center">
                 <Link href="/" className="group flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center text-accent-primary font-nom text-xl border border-accent-gold/20 group-hover:bg-accent-primary/20 transition-all duration-300">
-                        𡨸
-                    </div>
+                    <Image
+                        src="/nomflow-wordmark-v3.png"
+                        alt=""
+                        width={880}
+                        height={1024}
+                        priority
+                        className="h-12 w-auto select-none scale-125 origin-center group-hover:scale-[1.32] transition-transform duration-300"
+                    />
                     <div className="flex flex-col">
                         <span className="text-xl font-display font-bold tracking-tight text-text-primary">NômFlow</span>
                         <span className="text-[8px] font-display font-bold uppercase tracking-[0.4em] text-accent-primary opacity-60">Script, Simplified</span>

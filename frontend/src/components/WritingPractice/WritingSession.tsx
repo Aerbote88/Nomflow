@@ -22,7 +22,7 @@ function LineWithHighlight({ line, target }: { line: string; target: string }) {
                     return (
                         <span
                             key={i}
-                            className="inline-flex items-center justify-center align-middle mx-0.5 sm:mx-1 w-6 h-6 sm:w-8 sm:h-8 rounded-md border-2 border-dashed border-accent-primary bg-accent-primary/10 text-transparent select-none"
+                            className="inline-flex items-center justify-center align-middle -translate-y-1 mx-0.5 sm:mx-1 w-6 h-6 sm:w-8 sm:h-8 rounded-md border-2 border-dashed border-accent-primary bg-accent-primary/10 text-transparent select-none"
                             aria-label="hidden character"
                         >
                             {ch}

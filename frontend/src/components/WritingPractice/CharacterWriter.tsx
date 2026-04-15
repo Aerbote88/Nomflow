@@ -25,7 +25,7 @@ type HanziWriterInstance = {
     showOutline: () => void;
     hideOutline: () => void;
     showCharacter: () => void;
-    hideCharacter: () => void;
+    hideCharacter: (opts?: { duration?: number; onComplete?: () => void }) => void;
     updateColor: (type: string, color: string, opts?: { duration?: number }) => void;
 };
 
@@ -147,8 +147,13 @@ export function CharacterWriter({
                 if (canceled) return;
                 setTimeout(() => {
                     if (writerRef.current !== w) return;
-                    w.hideCharacter();
-                    startQuiz();
+                    w.hideCharacter({
+                        duration: 600,
+                        onComplete: () => {
+                            if (writerRef.current !== w) return;
+                            startQuiz();
+                        },
+                    });
                 }, 700);
             },
         });
