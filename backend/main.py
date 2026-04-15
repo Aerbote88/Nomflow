@@ -35,7 +35,7 @@ scheduler = AsyncIOScheduler()
 async def lifespan(app: FastAPI):
     print("Initializing Database...")
     create_db_and_tables()
-    
+
     print("Starting Automated Database Backups (Daily at 03:00)...")
     scheduler.add_job(
         perform_backup,
@@ -44,7 +44,26 @@ async def lifespan(app: FastAPI):
         replace_existing=True
     )
     scheduler.start()
-    
+
+    # Warm the writing-practice character-sequence cache in the background so
+    # the first user request is served from memory instead of hitting the DB.
+    import asyncio
+    async def _warm_writing_cache():
+        try:
+            from sqlmodel import Session
+            from .database import engine
+            with Session(engine) as s:
+                texts = s.exec(select(SourceText)).all()
+                for t in texts:
+                    title = (t.title or "").lower()
+                    if "kiều" in title or "kieu" in title:
+                        get_text_character_sequence(t.id, s)
+                        print(f"Warmed writing-practice cache for text_id={t.id} ({t.title})")
+                        break
+        except Exception as e:
+            print(f"Writing-practice cache warm failed: {e}")
+    asyncio.create_task(_warm_writing_cache())
+
     yield
     print("Shutting down scheduler...")
     scheduler.shutdown()
@@ -2426,8 +2445,14 @@ def get_challenge_list_content(list_id: int, session: Session = Depends(get_sess
 
 # --- Dictionary Feature ---
 
+_text_character_sequence_cache: dict[int, dict] = {}
+
 @app.get("/api/texts/{text_id}/characters")
 def get_text_character_sequence(text_id: int, session: Session = Depends(get_session)):
+    cached = _text_character_sequence_cache.get(text_id)
+    if cached is not None:
+        return cached
+
     text = session.get(SourceText, text_id)
     if not text:
         raise HTTPException(404, "Text not found")
@@ -2468,7 +2493,9 @@ def get_text_character_sequence(text_id: int, session: Session = Depends(get_ses
                 "line_quoc_ngu": line_quoc_ngu,
                 "line_number": line.line_number,
             })
-    return {"title": text.title, "entries": entries}
+    result = {"title": text.title, "entries": entries}
+    _text_character_sequence_cache[text_id] = result
+    return result
 
 @app.get("/api/characters/strokes/{codepoint}")
 def get_character_strokes(codepoint: int, session: Session = Depends(get_session)):
