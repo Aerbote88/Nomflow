@@ -21,6 +21,14 @@ class Character(SQLModel, table=True):
     popularity: int = 0
     definition: Optional[str] = None
 
+class CharacterStrokes(SQLModel, table=True):
+    __tablename__ = "characterstrokes"
+    codepoint: int = Field(primary_key=True)
+    character: str = Field(index=True)
+    strokes_json: str
+    medians_json: str
+    stroke_count: int
+
 class Expression(SQLModel, table=True):
     __tablename__ = "linedictionary"
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -20,9 +20,6 @@ const lora = Lora({
 export const metadata: Metadata = {
   title: "NômFlow",
   description: "Advanced Nôm Study Tool",
-  icons: {
-    icon: '/icon.svg',
-  },
 };
 
 import { Navbar } from "@/components/Navigation/Navbar";

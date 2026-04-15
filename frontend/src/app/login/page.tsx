@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { logger } from '@/lib/logger';
@@ -52,16 +53,19 @@ export default function LoginPage() {
             {/* Background Decorative Elements */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-gold/5 blur-[120px] rounded-full pointer-events-none" />
 
-            <header className="mb-12 text-center flex flex-col items-center animate-in fade-in slide-in-from-top-4 duration-1000">
-                <div className="text-5xl md:text-6xl font-display font-medium text-accent-primary uppercase tracking-[0.1em] mb-3 leading-tight">
-                    NômFlow
-                </div>
-                <h1 className="text-sm md:text-base font-normal text-text-secondary/60 tracking-[0.2em] uppercase">
-                    Welcome Back
-                </h1>
+            <header className="mb-6 flex justify-center animate-in fade-in slide-in-from-top-4 duration-1000">
+                <Image
+                    src="/nomflow-wordmark-v3.png"
+                    alt="NômFlow"
+                    width={880}
+                    height={1024}
+                    priority
+                    className="w-56 md:w-72 h-auto select-none"
+                />
             </header>
 
-            <GlassCard className="w-full max-w-md p-8 md:p-10 shadow-2xl relative overflow-hidden">
+            <div className="relative w-full max-w-md animate-in fade-in slide-in-from-top-4 duration-1000">
+                <GlassCard className="w-full p-8 md:p-10 shadow-2xl relative overflow-hidden">
                 <form onSubmit={handleSubmit} className="space-y-8" suppressHydrationWarning>
                     <div>
                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
@@ -119,7 +123,8 @@ export default function LoginPage() {
                         </p>
                     </div>
                 </form>
-            </GlassCard>
+                </GlassCard>
+            </div>
 
         </div>
     );

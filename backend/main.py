@@ -24,7 +24,7 @@ from slowapi.errors import RateLimitExceeded
 from .backup_db import perform_backup
 
 from .database import get_session, create_db_and_tables
-from .models import Line, UserProgress, UserSettings, StudyList, StudyListItem, User, SourceText, LeaderboardEntry, ChallengeSession, XpLog, Character, Expression, ExpressionCharacter, Feedback, PasswordResetToken
+from .models import Line, UserProgress, UserSettings, StudyList, StudyListItem, User, SourceText, LeaderboardEntry, ChallengeSession, XpLog, Character, Expression, ExpressionCharacter, Feedback, PasswordResetToken, CharacterStrokes
 from .srs_logic import calculate_review, get_review_intervals
 from .auth import verify_password, get_password_hash, create_access_token, SECRET_KEY, ALGORITHM, oauth2_scheme
 
@@ -2425,6 +2425,61 @@ def get_challenge_list_content(list_id: int, session: Session = Depends(get_sess
     return results
 
 # --- Dictionary Feature ---
+
+@app.get("/api/texts/{text_id}/characters")
+def get_text_character_sequence(text_id: int, session: Session = Depends(get_session)):
+    text = session.get(SourceText, text_id)
+    if not text:
+        raise HTTPException(404, "Text not found")
+    lines = session.exec(
+        select(Line)
+        .where(Line.text_id == text_id)
+        .order_by(Line.line_number)
+        .options(
+            selectinload(Line.line_dict)
+            .selectinload(Expression.characters)
+            .selectinload(ExpressionCharacter.dictionary_entry),
+            selectinload(Line.dictionary_entry),
+        )
+    ).all()
+    entries: list[dict] = []
+    seen: set[str] = set()
+    for line in lines:
+        nom = line.nom_text or ""
+        line_quoc_ngu = line.quoc_ngu_text or ""
+
+        # Build a map: position-in-line -> quoc_ngu, using ExpressionCharacter ordering
+        per_char: dict[str, str] = {}
+        if line.line_dict and line.line_dict.characters:
+            for ec in line.line_dict.characters:
+                if ec.dictionary_entry and ec.dictionary_entry.nom_char:
+                    per_char.setdefault(ec.dictionary_entry.nom_char, ec.dictionary_entry.quoc_ngu or "")
+        elif line.dictionary_entry and line.dictionary_entry.nom_char:
+            per_char.setdefault(line.dictionary_entry.nom_char, line.dictionary_entry.quoc_ngu or "")
+
+        for ch in nom:
+            if not ch.strip() or ch in seen:
+                continue
+            seen.add(ch)
+            entries.append({
+                "character": ch,
+                "character_quoc_ngu": per_char.get(ch, ""),
+                "line_nom": nom,
+                "line_quoc_ngu": line_quoc_ngu,
+                "line_number": line.line_number,
+            })
+    return {"title": text.title, "entries": entries}
+
+@app.get("/api/characters/strokes/{codepoint}")
+def get_character_strokes(codepoint: int, session: Session = Depends(get_session)):
+    row = session.get(CharacterStrokes, codepoint)
+    if not row:
+        raise HTTPException(404, "Stroke data not found")
+    return {
+        "character": row.character,
+        "strokes": json.loads(row.strokes_json),
+        "medians": json.loads(row.medians_json),
+    }
 
 @app.get("/api/dictionary/char/{entry_id}")
 def get_dictionary_char_data(entry_id: int, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
