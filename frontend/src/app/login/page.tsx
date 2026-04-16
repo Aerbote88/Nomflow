@@ -59,20 +59,20 @@ export default function LoginPage() {
             {/* Background Decorative Elements */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-gold/5 blur-[120px] rounded-full pointer-events-none" />
 
-            <header className="mb-6 flex justify-center animate-in fade-in slide-in-from-top-4 duration-1000">
+            <header className="mb-3 md:mb-6 flex justify-center animate-in fade-in slide-in-from-top-4 duration-1000">
                 <Image
                     src="/nomflow-wordmark-v3.png"
                     alt="NômFlow"
                     width={880}
                     height={1024}
                     priority
-                    className="w-56 md:w-72 h-auto select-none"
+                    className="w-44 md:w-72 h-auto select-none"
                 />
             </header>
 
             <div className="relative w-full max-w-md animate-in fade-in slide-in-from-top-4 duration-1000">
-                <GlassCard className="w-full p-8 md:p-10 shadow-2xl relative overflow-hidden">
-                <form onSubmit={handleSubmit} className="space-y-8" suppressHydrationWarning>
+                <GlassCard className="w-full p-5 md:p-10 shadow-2xl relative overflow-hidden">
+                <form onSubmit={handleSubmit} className="space-y-5 md:space-y-8" suppressHydrationWarning>
                     <div>
                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
                             Username or Email
@@ -82,7 +82,7 @@ export default function LoginPage() {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
-                            className="w-full px-5 py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
+                            className="w-full px-5 py-3 md:py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
                             placeholder="Enter your username or email..."
                             suppressHydrationWarning
                         />
@@ -97,14 +97,14 @@ export default function LoginPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="w-full px-5 py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
+                            className="w-full px-5 py-3 md:py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
                             placeholder="••••••••"
                             suppressHydrationWarning
                         />
                     </div>
 
                     {error && (
-                        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest text-center">
+                        <div className="p-3 md:p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest text-center">
                             {error}
                         </div>
                     )}
@@ -112,7 +112,7 @@ export default function LoginPage() {
                     <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-5 text-sm font-black tracking-[0.2em] relative overflow-hidden group"
+                        className="w-full py-3.5 md:py-5 text-sm font-black tracking-[0.2em] relative overflow-hidden group"
                     >
                         <span className="relative z-10">{loading ? 'SIGNING IN...' : 'SIGN IN'}</span>
                         {loading && (
@@ -120,7 +120,7 @@ export default function LoginPage() {
                         )}
                     </Button>
 
-                    <div className="flex flex-col gap-3 items-center">
+                    <div className="flex flex-col gap-2 md:gap-3 items-center">
                         <Link href="/forgot-password" className="text-[10px] font-black text-text-secondary/50 hover:text-accent-primary transition-colors uppercase tracking-widest">
                             Forgot your password?
                         </Link>
@@ -138,7 +138,7 @@ export default function LoginPage() {
                     <button
                         type="button"
                         onClick={handleTryWithoutSignIn}
-                        className="w-full py-4 rounded-xl bg-accent-primary/10 hover:bg-accent-primary/15 border-2 border-accent-primary/30 hover:border-accent-primary/60 text-accent-primary text-sm font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] group"
+                        className="w-full py-3 md:py-4 rounded-xl bg-accent-primary/10 hover:bg-accent-primary/15 border-2 border-accent-primary/30 hover:border-accent-primary/60 text-accent-primary text-sm font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] group"
                     >
                         <span className="inline-flex items-center gap-2">
                             Try the Demo
