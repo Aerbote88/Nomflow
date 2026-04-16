@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { WritingSession } from '@/components/WritingPractice/WritingSession';
+import { useGuestOrAuthGuard } from '@/hooks/useGuestOrAuthGuard';
 
 type SourceText = {
     id: number;
@@ -51,6 +52,7 @@ function writeCache(seq: TextCharacterSequence): void {
 }
 
 export default function WritingPracticePage() {
+    useGuestOrAuthGuard();
     const [entries, setEntries] = useState<WritingEntry[] | null>(null);
     const [title, setTitle] = useState<string>('');
     const [error, setError] = useState<string | null>(null);

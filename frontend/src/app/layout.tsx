@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 
 import { Navbar } from "@/components/Navigation/Navbar";
 import { Footer } from "@/components/Navigation/Footer";
+import { GuestBanner } from "@/components/ui/GuestBanner";
 
 export default function RootLayout({
   children,
@@ -37,6 +38,7 @@ export default function RootLayout({
         <div id="page-scroller">
           <div className="main-wrapper container mx-auto px-4 pb-4 pt-2 md:pt-4 md:px-8 md:pb-8 w-full max-w-6xl">
             <Navbar />
+            <GuestBanner />
             {children}
           </div>
           <Footer />

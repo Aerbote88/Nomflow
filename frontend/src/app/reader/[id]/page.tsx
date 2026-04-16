@@ -10,6 +10,7 @@ import { AddToListModal } from '@/components/Study/AddToListModal';
 import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
 import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
 import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
+import { useGuestOrAuthGuard } from '@/hooks/useGuestOrAuthGuard';
 
 interface LineItem {
     id: number;
@@ -40,6 +41,7 @@ interface SourceText {
 const WORD_LIST_AUTHORS = ['Chunom.org', 'Digitizing Vietnam Team'];
 
 export default function ReaderDetailPage() {
+    useGuestOrAuthGuard();
     const params = useParams();
     const router = useRouter();
     const textId = params.id;
@@ -47,6 +49,11 @@ export default function ReaderDetailPage() {
     const [data, setData] = useState<TextDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
+    const [isGuest, setIsGuest] = useState(false);
+
+    useEffect(() => {
+        setIsGuest(localStorage.getItem('guest_mode') === 'true' && !localStorage.getItem('username'));
+    }, []);
 
     // Sidebar: available texts
     const [texts, setTexts] = useState<SourceText[]>([]);
@@ -309,11 +316,11 @@ export default function ReaderDetailPage() {
                         onViewLine={(lineId) => dict.loadLineDict(lineId)}
                         onBackToLine={dict.backToLine}
                         showBackToLine={dict.canGoBack}
-                        onAddToList={(item) => {
+                        onAddToList={isGuest ? undefined : (item) => {
                             setModalItem(item);
                             setIsModalOpen(true);
                         }}
-                        status={selectedLine.status}
+                        status={isGuest ? undefined : selectedLine.status}
                     />
                 )}
             </DictionaryPanel>

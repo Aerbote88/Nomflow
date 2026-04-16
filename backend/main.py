@@ -1378,31 +1378,31 @@ def _create_new_progress(user_id, item_type, item_id, session, preferred_text_id
     return content
 
 @app.get("/api/browse", response_model=BrowseResponse)
-def browse_content(text_id: Optional[int] = None, page: int = 1, limit: int = 20, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+def browse_content(text_id: Optional[int] = None, page: int = 1, limit: int = 20, user: Optional[User] = Depends(get_optional_user), session: Session = Depends(get_session)):
     offset = (page - 1) * limit
-    
+
     query = select(Line)
     if text_id:
         query = query.where(Line.text_id == text_id).order_by(Line.line_number)
-    
+
     total = session.exec(select(func.count()).select_from(query.subquery())).one()
-    
+
     # Eagerly load the line dictionaries, characters, and dictionary entries to prevent N+1 queries
     query = query.options(
         selectinload(Line.line_dict).selectinload(Expression.characters).selectinload(ExpressionCharacter.dictionary_entry)
     )
-    
+
     lines = session.exec(query.offset(offset).limit(limit)).all()
-    
-    # Pre-fetch user progress for these lines/characters
+
+    # Pre-fetch user progress for these lines/characters (skipped for guests)
     progress_map = {}
-    if lines:
+    if lines and user:
         line_ids = [l.id for l in lines]
-        
+
         # Get Expression IDs and Character IDs
         line_dict_ids = [l.line_dictionary_id for l in lines if l.line_dictionary_id]
         char_entry_ids = [l.dictionary_id for l in lines if l.dictionary_id]
-        
+
         # Query Line Progress
         if line_dict_ids:
             line_progress = session.exec(
@@ -1414,7 +1414,7 @@ def browse_content(text_id: Optional[int] = None, page: int = 1, limit: int = 20
             ).all()
             for p in line_progress:
                 progress_map[f"line:{p.item_id}"] = "learning" if p.is_learning else "learned"
-                
+
         # Query Character Progress
         if char_entry_ids:
             char_progress = session.exec(
@@ -2508,8 +2508,75 @@ def get_character_strokes(codepoint: int, session: Session = Depends(get_session
         "medians": json.loads(row.medians_json),
     }
 
+# Public sample deck for guests trying the product without an account.
+# Mixes a few Truyện Kiều lines (if available) with popular single characters so
+# the demo shows both item types.
+@app.get("/api/guest/study/sample")
+def get_guest_study_sample(session: Session = Depends(get_session)):
+    items = []
+    fake_id = -1
+
+    all_texts = session.exec(select(SourceText)).all()
+    kieu = next(
+        (t for t in all_texts if "kiều" in t.title.lower() or "kieu" in t.title.lower()),
+        None,
+    )
+
+    line_limit = 5
+    if kieu:
+        lines = session.exec(
+            select(Line)
+            .options(selectinload(Line.line_dict))
+            .where(Line.text_id == kieu.id, Line.line_dictionary_id != None)
+            .order_by(Line.line_number)
+            .limit(line_limit)
+        ).all()
+        for l in lines:
+            ld = l.line_dict
+            if not ld:
+                continue
+            items.append({
+                "user_progress_id": fake_id,
+                "item_type": "line",
+                "content_id": ld.id,
+                "nom": ld.nom_text,
+                "quoc_ngu": ld.quoc_ngu_text,
+                "english": ld.english_translation,
+                "source_title": kieu.title,
+                "line_number": l.line_number,
+                "is_new": True,
+                "is_learning": False,
+                "next_review_due": datetime.utcnow().isoformat(),
+                "interval": 0,
+            })
+            fake_id -= 1
+
+    char_limit = 15 - len(items)
+    chars = session.exec(
+        select(Character)
+        .order_by(Character.popularity.desc())
+        .limit(char_limit)
+    ).all()
+    for c in chars:
+        items.append({
+            "user_progress_id": fake_id,
+            "item_type": "character",
+            "content_id": c.id,
+            "nom": c.nom_char,
+            "quoc_ngu": c.quoc_ngu,
+            "english": c.definition,
+            "source_title": None,
+            "is_new": True,
+            "is_learning": False,
+            "next_review_due": datetime.utcnow().isoformat(),
+            "interval": 0,
+        })
+        fake_id -= 1
+
+    return items
+
 @app.get("/api/dictionary/char/{entry_id}")
-def get_dictionary_char_data(entry_id: int, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+def get_dictionary_char_data(entry_id: int, user: Optional[User] = Depends(get_optional_user), session: Session = Depends(get_session)):
     entry = session.get(Character, entry_id)
     if not entry: raise HTTPException(404, "Character not found")
     
@@ -2580,8 +2647,10 @@ def get_dictionary_char_data(entry_id: int, user: User = Depends(get_current_use
             "source": f"{st.title} - Line {l.line_number}"
         })
         
-    # Get user stats for this char
-    prog = session.exec(select(UserProgress).where(UserProgress.user_id == user.id, UserProgress.item_type == "character", UserProgress.item_id == entry.id)).first()
+    # Get user stats for this char (skipped for guests)
+    prog = None
+    if user:
+        prog = session.exec(select(UserProgress).where(UserProgress.user_id == user.id, UserProgress.item_type == "character", UserProgress.item_id == entry.id)).first()
     
     display_qn = entry.quoc_ngu.lower().strip(".,;?! ")
     
@@ -2601,7 +2670,7 @@ def get_dictionary_char_data(entry_id: int, user: User = Depends(get_current_use
 
 
 @app.get("/api/dictionary/line/{line_id}")
-def get_dictionary_line_data(line_id: int, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+def get_dictionary_line_data(line_id: int, user: Optional[User] = Depends(get_optional_user), session: Session = Depends(get_session)):
     # line_id here is Expression.id
     ld = session.get(Expression, line_id)
     if not ld: raise HTTPException(404, "Line not found")
@@ -2637,8 +2706,10 @@ def get_dictionary_line_data(line_id: int, user: User = Depends(get_current_user
             "order": link.order_in_line
         })
         
-    # Get user stats for this line
-    prog = session.exec(select(UserProgress).where(UserProgress.user_id == user.id, UserProgress.item_type == "line", UserProgress.item_id == ld.id)).first()
+    # Get user stats for this line (skipped for guests)
+    prog = None
+    if user:
+        prog = session.exec(select(UserProgress).where(UserProgress.user_id == user.id, UserProgress.item_type == "line", UserProgress.item_id == ld.id)).first()
 
     # Provenance: which source text(s) and line number(s) reference this Expression
     sources_query = (

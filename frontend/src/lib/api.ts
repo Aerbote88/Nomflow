@@ -24,7 +24,15 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
 
             if (response.status === 401) {
                 if (typeof window !== 'undefined') {
-                    window.location.href = '/login';
+                    // Only skip the redirect if the user is actually a guest
+                    // (guest_mode flag AND no username). A stale guest_mode flag
+                    // lingering after registration must not swallow 401s for
+                    // logged-in users.
+                    const isGuest = localStorage.getItem('guest_mode') === 'true'
+                        && !localStorage.getItem('username');
+                    if (!isGuest) {
+                        window.location.href = '/login';
+                    }
                 }
                 throw new Error('Unauthorized');
             }

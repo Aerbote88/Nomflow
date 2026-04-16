@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
@@ -8,6 +9,7 @@ import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
 import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
 import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
 import { AddToListModal } from '@/components/Study/AddToListModal';
+import { useGuestOrAuthGuard } from '@/hooks/useGuestOrAuthGuard';
 
 interface VocabItem {
     user_progress_id: number;
@@ -22,6 +24,7 @@ interface VocabItem {
 }
 
 export default function VocabPage() {
+    useGuestOrAuthGuard();
     const [vocab, setVocab] = useState<VocabItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -48,8 +51,14 @@ export default function VocabPage() {
         dict.reset();
     };
 
+    const [isGuest, setIsGuest] = useState(false);
+
     useEffect(() => {
-        api.get<VocabItem[]>('/api/user/vocab')
+        const guest = localStorage.getItem('guest_mode') === 'true' && !localStorage.getItem('username');
+        setIsGuest(guest);
+
+        const endpoint = guest ? '/api/guest/study/sample' : '/api/user/vocab';
+        api.get<VocabItem[]>(endpoint)
             .then(setVocab)
             .catch(logger.error)
             .finally(() => setLoading(false));
@@ -90,25 +99,38 @@ export default function VocabPage() {
     return (
         <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 fade-in-stable relative">
             <header className="mb-6 md:mb-12">
-                <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">Your Archive</div>
+                <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">{isGuest ? 'Demo Deck' : 'Your Archive'}</div>
                 <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">Flashcards</h1>
             </header>
 
+            {isGuest && vocab.length > 0 && (
+                <Link
+                    href="/study?mode=random"
+                    className="block w-full md:w-auto md:inline-flex mb-6 md:mb-8 px-6 py-4 rounded-xl bg-accent-primary/10 hover:bg-accent-primary/15 border border-accent-primary/30 text-accent-primary text-center transition-all"
+                >
+                    <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em]">
+                        Start Random Review →
+                    </span>
+                </Link>
+            )}
+
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
-                <GlassCard className="!p-3 md:!p-6 text-center">
-                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Total</div>
-                    <div className="text-xl md:text-3xl font-black text-text-primary">{stats.total}</div>
-                </GlassCard>
-                <GlassCard className="!p-3 md:!p-6 text-center">
-                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learning</div>
-                    <div className="text-xl md:text-3xl font-black text-amber-500">{stats.learning}</div>
-                </GlassCard>
-                <GlassCard className="!p-3 md:!p-6 text-center">
-                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learned</div>
-                    <div className="text-xl md:text-3xl font-black text-emerald-500">{stats.learned}</div>
-                </GlassCard>
-            </div>
+            {!isGuest && (
+                <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+                    <GlassCard className="!p-3 md:!p-6 text-center">
+                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Total</div>
+                        <div className="text-xl md:text-3xl font-black text-text-primary">{stats.total}</div>
+                    </GlassCard>
+                    <GlassCard className="!p-3 md:!p-6 text-center">
+                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learning</div>
+                        <div className="text-xl md:text-3xl font-black text-amber-500">{stats.learning}</div>
+                    </GlassCard>
+                    <GlassCard className="!p-3 md:!p-6 text-center">
+                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learned</div>
+                        <div className="text-xl md:text-3xl font-black text-emerald-500">{stats.learned}</div>
+                    </GlassCard>
+                </div>
+            )}
 
             {/* Search & Filter */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -154,14 +176,18 @@ export default function VocabPage() {
                             <tr className="bg-bg-secondary/80 backdrop-blur-md border-b border-white/10">
                                 <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Nôm</th>
                                 <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Quốc Ngữ</th>
-                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary hidden sm:table-cell">Status</th>
-                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Next Due</th>
+                                {!isGuest && (
+                                    <>
+                                        <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary hidden sm:table-cell">Status</th>
+                                        <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Next Due</th>
+                                    </>
+                                )}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {displayedVocab.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-16 text-center text-text-secondary/40 italic font-display text-xl">
+                                    <td colSpan={isGuest ? 2 : 4} className="px-6 py-16 text-center text-text-secondary/40 italic font-display text-xl">
                                         No flashcards match your filters.
                                     </td>
                                 </tr>
@@ -182,20 +208,24 @@ export default function VocabPage() {
                                                 {item.quoc_ngu}
                                             </span>
                                         </td>
-                                        <td className="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
-                                            {item.is_learning ? (
-                                                <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-amber-500/20">
-                                                    Learning
-                                                </span>
-                                            ) : (
-                                                <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-emerald-500/20">
-                                                    Learned
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-text-secondary/60 font-medium">
-                                            {formatDate(item.next_review_due)}
-                                        </td>
+                                        {!isGuest && (
+                                            <>
+                                                <td className="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
+                                                    {item.is_learning ? (
+                                                        <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-amber-500/20">
+                                                            Learning
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-emerald-500/20">
+                                                            Learned
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-text-secondary/60 font-medium">
+                                                    {formatDate(item.next_review_due)}
+                                                </td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))
                             )}
