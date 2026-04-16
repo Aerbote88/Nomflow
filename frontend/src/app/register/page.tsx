@@ -56,9 +56,11 @@ export default function RegisterPage() {
 
                 if (loginRes.ok) {
                     const data = await loginRes.json();
+                    localStorage.removeItem('guest_mode');
                     localStorage.setItem('username', data.username);
                     window.location.href = '/dashboard';
                 } else {
+                    localStorage.removeItem('guest_mode');
                     router.push('/login?registered=true');
                 }
             } else {

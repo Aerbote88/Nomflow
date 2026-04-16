@@ -11,11 +11,14 @@ export function Navbar() {
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isGuest, setIsGuest] = useState(false);
     const [currentUser, setCurrentUser] = useState<string | null>(null);
 
     useEffect(() => {
         const username = localStorage.getItem('username');
+        const guest = localStorage.getItem('guest_mode') === 'true';
         setIsLoggedIn(!!username);
+        setIsGuest(guest && !username);
         setCurrentUser(username);
     }, [pathname]);
 
@@ -29,7 +32,13 @@ export function Navbar() {
             if (key.startsWith('study_session_')) localStorage.removeItem(key);
         });
         localStorage.removeItem('username');
+        localStorage.removeItem('guest_mode');
         window.location.href = '/api/logout';
+    };
+
+    const handleExitDemo = () => {
+        localStorage.removeItem('guest_mode');
+        window.location.href = '/login';
     };
 
     if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password') return null;
@@ -41,6 +50,12 @@ export function Navbar() {
         { href: '/writing-practice', label: 'Writing' },
         { href: '/leaderboard', label: 'Leaderboard' },
         { href: '/settings', label: 'Settings' },
+    ];
+
+    const guestNavLinks = [
+        { href: '/writing-practice', label: 'Writing' },
+        { href: '/reader', label: 'Reader' },
+        { href: '/flashcards', label: 'Flashcards' },
     ];
 
     return (
@@ -82,9 +97,9 @@ export function Navbar() {
                     {isLoggedIn ? (
                         <>
                             {navLinks.map((link) => (
-                                <Link 
+                                <Link
                                     key={link.href}
-                                    href={link.href} 
+                                    href={link.href}
                                     className={`text-[11px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith(link.href) ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}
                                 >
                                     {link.label}
@@ -104,6 +119,26 @@ export function Navbar() {
                                 Sign Out
                             </Button>
                         </>
+                    ) : isGuest ? (
+                        <>
+                            {guestNavLinks.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`text-[11px] font-black uppercase tracking-widest transition-colors ${pathname?.startsWith(link.href) ? 'text-accent-primary' : 'text-text-secondary hover:text-text-primary'}`}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleExitDemo}
+                                className="text-[11px] font-black text-text-secondary/60 hover:text-text-secondary uppercase tracking-[0.2em]"
+                            >
+                                Exit Demo
+                            </Button>
+                        </>
                     ) : (
                         <Link href="/login" className="text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors">
                             Sign In
@@ -118,9 +153,9 @@ export function Navbar() {
                     {isLoggedIn ? (
                         <>
                             {navLinks.map((link) => (
-                                <Link 
+                                <Link
                                     key={link.href}
-                                    href={link.href} 
+                                    href={link.href}
                                     className={`text-sm font-black uppercase tracking-[0.2em] transition-colors py-2 border-b border-white/5 last:border-0 ${pathname?.startsWith(link.href) ? 'text-accent-primary' : 'text-text-secondary'}`}
                                 >
                                     {link.label}
@@ -139,6 +174,28 @@ export function Navbar() {
                                     className="text-[10px] font-black text-red-500/60 hover:text-red-500 uppercase tracking-widest"
                                 >
                                     Sign Out
+                                </Button>
+                            </div>
+                        </>
+                    ) : isGuest ? (
+                        <>
+                            {guestNavLinks.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`text-sm font-black uppercase tracking-[0.2em] transition-colors py-2 border-b border-white/5 last:border-0 ${pathname?.startsWith(link.href) ? 'text-accent-primary' : 'text-text-secondary'}`}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                            <div className="flex justify-end items-center pt-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleExitDemo}
+                                    className="text-[10px] font-black text-text-secondary/60 uppercase tracking-widest"
+                                >
+                                    Exit Demo
                                 </Button>
                             </div>
                         </>

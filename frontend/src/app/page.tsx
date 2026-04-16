@@ -7,7 +7,13 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/dashboard');
+    const isGuest = localStorage.getItem('guest_mode') === 'true';
+    const isLoggedIn = !!localStorage.getItem('username');
+    if (isGuest && !isLoggedIn) {
+      router.push('/writing-practice');
+    } else {
+      router.push('/dashboard');
+    }
   }, [router]);
 
   return (

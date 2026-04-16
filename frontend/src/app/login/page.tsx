@@ -34,6 +34,7 @@ export default function LoginPage() {
 
             if (res.ok) {
                 const data = await res.json();
+                localStorage.removeItem('guest_mode');
                 localStorage.setItem('username', data.username);
                 window.location.href = '/dashboard';
             } else {
@@ -46,6 +47,11 @@ export default function LoginPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleTryWithoutSignIn = () => {
+        localStorage.setItem('guest_mode', 'true');
+        window.location.href = '/writing-practice';
     };
 
     return (
@@ -122,6 +128,23 @@ export default function LoginPage() {
                             Don't have an account? <Link href="/register" className="text-accent-primary hover:text-accent-primary/80 transition-colors underline decoration-accent-primary/30">Register Now</Link>
                         </p>
                     </div>
+
+                    <div className="relative flex items-center gap-3">
+                        <div className="flex-1 h-px bg-white/10" />
+                        <span className="text-[9px] font-black text-text-secondary/50 uppercase tracking-[0.3em]">or</span>
+                        <div className="flex-1 h-px bg-white/10" />
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleTryWithoutSignIn}
+                        className="w-full py-4 rounded-xl bg-accent-primary/10 hover:bg-accent-primary/15 border-2 border-accent-primary/30 hover:border-accent-primary/60 text-accent-primary text-sm font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] group"
+                    >
+                        <span className="inline-flex items-center gap-2">
+                            Try the Demo
+                            <span className="transition-transform group-hover:translate-x-1">→</span>
+                        </span>
+                    </button>
                 </form>
                 </GlassCard>
             </div>

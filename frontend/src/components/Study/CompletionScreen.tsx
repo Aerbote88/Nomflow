@@ -4,9 +4,10 @@ import { Button } from '@/components/ui';
 
 interface CompletionScreenProps {
     isSRS: boolean;
+    isGuest?: boolean;
 }
 
-export const CompletionScreen: React.FC<CompletionScreenProps> = ({ isSRS }) => {
+export const CompletionScreen: React.FC<CompletionScreenProps> = ({ isSRS, isGuest = false }) => {
     const title = isSRS ? "All Caught Up!" : "Session Complete!";
     const message = isSRS
         ? "You've finished all your scheduled reviews for this source."
@@ -22,35 +23,24 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({ isSRS }) => 
             </p>
 
             <div className="flex flex-col gap-3 w-full">
-                {!isSRS ? (
+                {!isSRS && (
+                    <Button
+                        size="lg"
+                        className="w-full shadow-lg shadow-accent-primary/20"
+                        onClick={() => window.location.reload()}
+                    >
+                        Go Again
+                    </Button>
+                )}
+                {!isGuest && (
                     <>
-                        <Button
-                            size="lg"
-                            className="w-full shadow-lg shadow-accent-primary/20"
-                            onClick={() => window.location.reload()}
-                        >
-                            Go Again
-                        </Button>
                         <Link href="/dashboard" className="w-full">
-                            <Button size="lg" variant="secondary" className="w-full">
+                            <Button size="lg" variant={isSRS ? 'primary' : 'secondary'} className="w-full">
                                 Back to Dashboard
                             </Button>
                         </Link>
                         <Link href="/library" className="w-full">
-                            <Button size="lg" variant="ghost" className="w-full">
-                                Go to Library
-                            </Button>
-                        </Link>
-                    </>
-                ) : (
-                    <>
-                        <Link href="/dashboard" className="w-full">
-                            <Button size="lg" className="w-full">
-                                Back to Dashboard
-                            </Button>
-                        </Link>
-                        <Link href="/library" className="w-full">
-                            <Button size="lg" variant="secondary" className="w-full">
+                            <Button size="lg" variant={isSRS ? 'secondary' : 'ghost'} className="w-full">
                                 Go to Library
                             </Button>
                         </Link>

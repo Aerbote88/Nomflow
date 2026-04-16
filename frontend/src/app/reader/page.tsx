@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard } from '@/components/ui';
+import { useGuestOrAuthGuard } from '@/hooks/useGuestOrAuthGuard';
 
 interface SourceText {
     id: number;
@@ -16,6 +17,7 @@ interface SourceText {
 const WORD_LIST_AUTHORS = ['Chunom.org', 'Digitizing Vietnam Team'];
 
 export default function ReaderPage() {
+    useGuestOrAuthGuard();
     const router = useRouter();
     const [texts, setTexts] = useState<SourceText[]>([]);
     const [loading, setLoading] = useState(true);

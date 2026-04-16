@@ -12,6 +12,7 @@ import { AddToListModal } from '@/components/Study/AddToListModal';
 import { DictionarySidebar } from '@/components/Dictionary/DictionarySidebar';
 import { DictionaryPanel } from '@/components/Dictionary/DictionaryPanel';
 import { useDictionarySidebar } from '@/hooks/useDictionarySidebar';
+import { useGuestOrAuthGuard } from '@/hooks/useGuestOrAuthGuard';
 
 interface StudyItem {
     user_progress_id: number;
@@ -30,6 +31,7 @@ interface StudyItem {
 }
 
 function StudyContent() {
+    useGuestOrAuthGuard();
     const searchParams = useSearchParams();
     const [queue, setQueue] = useState<StudyItem[]>([]);
     const [currentItem, setCurrentItem] = useState<StudyItem | null>(null);
@@ -58,12 +60,16 @@ function StudyContent() {
     const count = searchParams.get('count') || '5';
 
     const [currentUser, setCurrentUser] = useState<string | null>(null);
+    const [isGuest, setIsGuest] = useState(false);
 
     // Purge study sessions from other users on mount
     useEffect(() => {
-        const user = localStorage.getItem('username') || 'anon';
+        const username = localStorage.getItem('username');
+        const guest = localStorage.getItem('guest_mode') === 'true' && !username;
+        const user = username || (guest ? 'guest' : 'anon');
         setCurrentUser(user);
-        
+        setIsGuest(guest);
+
         const prefix = `study_session_${user}_`;
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('study_session_') && !key.startsWith(prefix)) {
@@ -94,7 +100,22 @@ function StudyContent() {
         if (!silent) setLoading(true);
 
         try {
-            // Add a small coordination delay for pre-fetches to avoid 
+            // Guest mode: one-shot fetch from the public sample endpoint. No SRS,
+            // no repeats — the frontend walks the list in order and stops.
+            if (isGuest) {
+                const sample = await apiFetch<StudyItem[]>('guest/study/sample');
+                noMoreRemaining.current = true;
+                if (sample.length === 0) {
+                    setCompleted(true);
+                } else {
+                    setQueue(sample);
+                    queueRef.current = sample;
+                    setStats({ due: sample.length, studied: 0 });
+                }
+                return;
+            }
+
+            // Add a small coordination delay for pre-fetches to avoid
             // slamming the server at the exact same time as a review POST
             if (silent) {
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -180,12 +201,13 @@ function StudyContent() {
             setIsFetching(false);
             setLoading(false);
         }
-    }, [mode, listId, textId, customParams, count]); // isFetching handled via ref to avoid recreation
+    }, [mode, listId, textId, customParams, count, isGuest]); // isFetching handled via ref to avoid recreation
 
     // Save session state to localStorage whenever it changes (SRS only)
     useEffect(() => {
         if (mode === 'random') return;
         if (currentUser === null) return;
+        if (isGuest) return;
         if (currentItem || queue.length > 0) {
             const sessionState = {
                 queue,
@@ -203,6 +225,11 @@ function StudyContent() {
         // for "anon", miss the real user's saved session, and kick off a fetchItems
         // that races against the later restore (filtering all results out).
         if (currentUser === null) return;
+        if (isGuest) {
+            // Guests get a fresh sample deck every mount — no persistence.
+            fetchItems();
+            return;
+        }
         if (mode === 'random') {
             localStorage.removeItem(sessionKey); // clear any stale random session
             fetchItems();
@@ -287,8 +314,10 @@ function StudyContent() {
         setDictSidebarOpen(false);
         dict.reset();
 
-        // Pre-fetch if queue is low (not for random mode — we have a fixed set)
-        if (mode !== 'random' && queueRef.current.length < 3) {
+        // Pre-fetch if queue is low (not for random mode — we have a fixed set;
+        // not for guests — the sample endpoint returns the same deck and would
+        // reset the queue).
+        if (mode !== 'random' && !isGuest && queueRef.current.length < 3) {
             logger.log(`[Study Debug] Queue low (${queueRef.current.length} remaining), pre-fetching...`);
             fetchItems(true);
         }
@@ -313,8 +342,8 @@ function StudyContent() {
             setStats(prev => ({ ...prev, studied: prev.studied + 1, due: Math.max(0, prev.due - 1) }));
         }
 
-        // Check for stale session before advancing
-        if (!reviewedItem.is_practice && mode !== 'random' && !reviewedItem.user_progress_id) {
+        // Check for stale session before advancing (guests skip — no real SRS state)
+        if (!isGuest && !reviewedItem.is_practice && mode !== 'random' && !reviewedItem.user_progress_id) {
             logger.warn('[Study] Stale session - clearing and restarting');
             localStorage.removeItem(sessionKey);
             setQueue([]);
@@ -327,8 +356,8 @@ function StudyContent() {
         // Advance immediately — don't wait for the API
         nextItem();
 
-        // Fire review in the background
-        if (!reviewedItem.is_practice && mode !== 'random') {
+        // Fire review in the background (skipped for guests — no persistence)
+        if (!isGuest && !reviewedItem.is_practice && mode !== 'random') {
             activeSubmissionsRef.current++;
             apiFetch('study/review', {
                 method: 'POST',
@@ -417,7 +446,7 @@ function StudyContent() {
 
                 <div className="w-full max-w-[600px] mt-4 md:mt-8">
                     {completed ? (
-                        <CompletionScreen isSRS={mode === 'srs'} />
+                        <CompletionScreen isSRS={mode === 'srs'} isGuest={isGuest} />
                     ) : currentItem ? (
                         <>
                             <StudyCard
@@ -441,21 +470,23 @@ function StudyContent() {
                                 isPractice={mode === 'random'}
                             />
 
-                            <div className="flex gap-3 mt-4 md:mt-6 w-full">
-                                <button
-                                    onClick={handleUndo}
-                                    disabled={!canUndo}
-                                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
-                                >
-                                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
-                                </button>
-                                <button
-                                    onClick={() => setIsAddToListOpen(true)}
-                                    className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
-                                >
-                                    <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
-                                </button>
-                            </div>
+                            {!isGuest && (
+                                <div className="flex gap-3 mt-4 md:mt-6 w-full">
+                                    <button
+                                        onClick={handleUndo}
+                                        disabled={!canUndo}
+                                        className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
+                                    >
+                                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setIsAddToListOpen(true)}
+                                        className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
+                                    >
+                                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
+                                    </button>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="flex items-center justify-center min-h-[300px]">
@@ -464,9 +495,14 @@ function StudyContent() {
                     )}
                 </div>
 
-                {!completed && (
+                {!completed && !isGuest && (
                     <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
                         Your Progress is Automatically Saved
+                    </div>
+                )}
+                {!completed && isGuest && (
+                    <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
+                        Demo Mode — Progress Not Saved
                     </div>
                 )}
             </main>
@@ -493,7 +529,7 @@ function StudyContent() {
             </DictionaryPanel>
 
             {/* Add to List Modal - supports both study card button and sidebar */}
-            {currentItem && (
+            {currentItem && !isGuest && (
                 <AddToListModal
                     isOpen={isAddToListOpen}
                     onClose={() => { setIsAddToListOpen(false); setModalItem(null); }}
