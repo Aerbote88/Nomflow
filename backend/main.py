@@ -510,19 +510,12 @@ def get_or_create_line_dict(session: Session, nom_text: str, qn_text: str):
     line_dict = session.exec(select(Expression).where(Expression.nom_text == nom_text, Expression.quoc_ngu_text == qn_text)).first()
     
     if not line_dict:
-        # Create new
         line_dict = Expression(nom_text=nom_text, quoc_ngu_text=qn_text)
         session.add(line_dict)
         session.commit()
         session.refresh(line_dict)
-        
-        # Parse Characters (Simple 1-to-1 assumption for now or based on length)
-        # TODO: Better parsing logic if needed. For now assuming chars are provided or we split.
-        # Ideally the caller passes parsed chars. But here we only have text strings.
-        # If this is called from 'insert_line', we usually parse there.
-        # Let's handle character linking separate or require it here?
-        # Actually better to decouple: Logic is -> Get/Create LineDict -> Loop chars -> Get/Create DictEntry -> Link.
-    
+        # Character linking is handled by the caller via update_line_characters().
+
     return line_dict
 
 def update_line_characters(session: Session, line_dict: Expression, nom_chars: List[str], qn_words: List[str]):
