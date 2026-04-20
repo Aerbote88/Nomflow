@@ -2,7 +2,7 @@
 
 **Live at [nomflow.app](https://nomflow.app).**
 
-An advanced study tool for learning **chữ Nôm** — the classical Vietnamese script used to write vernacular literature before the 20th century. NômFlow combines a spaced-repetition engine, line-by-line readers for canonical texts, writing practice with animated stroke diagrams, and a gamified challenge mode to help learners build real fluency with Nôm characters and the literary works they appear in.
+An advanced study tool for learning **chữ Nôm** — the classical Vietnamese vernacular script. NômFlow combines a spaced-repetition engine, line-by-line readers for canonical texts, writing practice with animated stroke diagrams, and a gamified challenge mode to help learners build real fluency with Nôm characters and the literary works they appear in.
 
 The initial corpus is drawn from classical works including *Truyện Kiều* and *Lục Vân Tiên*.
 
@@ -10,10 +10,10 @@ The initial corpus is drawn from classical works including *Truyện Kiều* and
 
 - **Spaced repetition (SRS)** — SM-2–style review algorithm with learning steps, ease-factor adjustment, and per-item interval tracking. Reviews can be undone.
 - **Line- and character-level study** — learn individual chữ Nôm characters or whole lines of classical poetry; progress is tracked separately for each item type.
-- **Reader** — browse source texts line by line with Quốc Ngữ alignment, English translation, and per-character dictionary lookups.
+- **Reader** — browse source texts line by line with Quốc Ngữ and per-character dictionary lookups.
 - **Writing practice** — animated stroke-order diagrams powered by `hanzi-writer` and a custom stroke-data ingestion pipeline.
-- **Flashcards & Challenge mode** — quick review and a sudden-death / normal scoring mode with persistent challenge sessions and per-text leaderboards.
-- **Study lists** — build and share custom lists of characters or lines.
+- **Challenge mode** — Progress through texts line by line, typing the Quốc ngữ for each line, with sudden-death / normal scoring mode, persistent challenge sessions, and per-text leaderboards.
+- **Study lists** — build custom lists of characters or lines.
 - **Gamification** — XP, daily streaks, global and per-text leaderboards.
 - **Guest mode** — try the app without creating an account.
 - **Accounts & auth** — JWT auth, password reset via email (Resend), rate limiting.
@@ -185,4 +185,4 @@ MIT — see [LICENSE](LICENSE).
 
 - **Nôm Na Tông** font used throughout the UI.
 - Stroke-order data ingested from the companion [`make-me-a-chunom`](https://github.com/Aerbote88/make-me-a-chunom) project, with newly generated Nôm-only data maintained in [`chunom-stroke-data`](https://github.com/Aerbote88/chunom-stroke-data).
-- The broader Hán-Nôm preservation community whose dictionaries and transcriptions make projects like this possible.
+- The broader Hán-Nôm preservation community make projects like this possible.
