@@ -13,7 +13,7 @@ export function Footer() {
                 <div className="mb-1 font-semibold">NômFlow — Beta Version 1.0</div>
                 <div className="opacity-80">
                     Created by{' '}
-                    <a href="https://columbia.academia.edu/AlbertErrickson" target="_blank" rel="noopener noreferrer"
+                    <a href="https://www.alberterrickson.com/" target="_blank" rel="noopener noreferrer"
                         className="text-accent-primary hover:text-accent-hover transition-colors font-medium">
                         Albert Errickson
                     </a>
