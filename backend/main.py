@@ -1176,8 +1176,13 @@ def get_next_study_item(
         for content in results:
             content["is_new"] = False
         
-    # B. Get New Items if needed
-    if len(results) < count:
+    # B. Get New Items only when the SRS due query is truly empty for this
+    # fetch — i.e. every due item the user has is either already in their
+    # session's seen list or was reviewed in a prior session. A short batch
+    # with `len(results) > 0` just means the rest of the user's due items
+    # are already in flight; introducing new items here would mix them into
+    # the user's queue while they still have reviews to finish.
+    if not results:
         if not settings:
             settings = session.exec(select(UserSettings).where(UserSettings.user_id == user.id)).first()
             if not settings:

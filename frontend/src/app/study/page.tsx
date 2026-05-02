@@ -97,6 +97,25 @@ function StudyContent() {
         currentItemRef.current = currentItem;
     }, [currentItem]);
 
+    // Compact session-state snapshot for dev-console diagnostics. Cheap to call
+    // — no allocation surprises since all fields are primitives derived from
+    // already-tracked state. Only ever invoked inside logger.log() which is
+    // gated on dev mode by frontend/src/lib/logger.ts.
+    const sessionSnapshot = () => ({
+        mode,
+        textId,
+        listId,
+        customParams,
+        queueLen: queueRef.current.length,
+        currentItemId: currentItemRef.current
+            ? `${currentItemRef.current.item_type}:${currentItemRef.current.content_id}`
+            : null,
+        reviewedCount: reviewedInSession.current.size,
+        statsDue: stats.due,
+        statsStudied: stats.studied,
+        noMoreRemaining: noMoreRemaining.current,
+    });
+
     const fetchItems = useCallback(async (silent = false) => {
         if (isFetchingRef.current) return;
         isFetchingRef.current = true;
@@ -132,27 +151,53 @@ function StudyContent() {
             if (textId) params.append('text_id', textId);
             if (customParams) params.append('custom_params', customParams);
 
-            // Pass currently in-flight items + session-reviewed items to prevent repeats
+            // Only exclude items currently in flight (queue + on-screen card).
+            // Reviewed items that recycle into a short learning step (e.g. an
+            // "Again" press dropping a card to a 1-minute interval) should be
+            // allowed to surface again — the backend's next_review_due check
+            // already enforces "don't return items not yet due", and the
+            // in-flight exclusion is enough to prevent serving the same item
+            // twice while it's still on the user's screen. Including the full
+            // reviewedInSession set here used to over-suppress, blocking the
+            // recycled cards the SRS algorithm specifically wants to re-serve.
             const inFlight = [currentItemRef.current, ...queueRef.current]
                 .filter((item): item is StudyItem => !!item)
                 .map(item => `${item.item_type}:${item.content_id}`);
 
-            const sessionSeen = mode === 'srs'
-                ? [...new Set([...reviewedInSession.current, ...inFlight])]
-                : inFlight;
+            const sessionSeen = inFlight;
 
             if (sessionSeen.length > 0) {
                 params.append('seen', sessionSeen.join(','));
             }
 
-            logger.log(`[Study Debug] Fetching items. In-flight IDs:`, inFlight);
+            logger.log('[Study]', 'fetch:start', {
+                silent,
+                seenLen: sessionSeen.length,
+                count: params.get('count'),
+                snapshot: sessionSnapshot(),
+            });
 
             type StudyNextDone = { status: 'done' };
             type StudyNextResponse = StudyNextDone | StudyItem | StudyItem[];
             const isDoneResponse = (d: StudyNextResponse): d is StudyNextDone =>
                 !Array.isArray(d) && 'status' in d && d.status === 'done';
             const data = await apiFetch<StudyNextResponse>(`study/next?${params.toString()}`);
-            logger.log(`[Study Debug] Received data:`, data);
+            if (isDoneResponse(data)) {
+                logger.log('[Study]', 'fetch:result', { status: 'done', snapshot: sessionSnapshot() });
+            } else {
+                const items = Array.isArray(data) ? data : [data];
+                const dueCount = items.filter(i => i.is_new === false).length;
+                const newCount = items.filter(i => i.is_new === true).length;
+                const backendTotalDue = items[0]?.session_stats?.due;
+                logger.log('[Study]', 'fetch:result', {
+                    returned: items.length,
+                    due: dueCount,
+                    new: newCount,
+                    backendTotalDue,
+                    statsDue: stats.due,
+                    drift: backendTotalDue != null ? backendTotalDue - stats.due : null,
+                });
+            }
 
             if (isDoneResponse(data)) {
                 noMoreRemaining.current = true;
@@ -168,29 +213,35 @@ function StudyContent() {
                     noMoreRemaining.current = true;
                 }
 
-                // Client-side guard against duplicates already in queue or reviewed in this session
+                // Client-side guard against duplicates already in flight (current
+                // item + queue). Items the user reviewed earlier in the session
+                // that have recycled into a short learning step ARE allowed
+                // through — that's the point of recycling. The backend's
+                // next_review_due check enforces "don't return items not yet
+                // due", so anything that comes back from the API is genuinely
+                // ready for re-review.
                 const currentIds = new Set([currentItemRef.current, ...queueRef.current]
                     .filter(Boolean)
                     .map(i => `${i!.item_type}:${i!.content_id}`));
-                
-                // Also add reviewed items to the client-side exclusion set
-                reviewedInSession.current.forEach(id => currentIds.add(id));
 
                 const uniqueNewItems = newItems.filter(item =>
                     !currentIds.has(`${item.item_type}:${item.content_id}`)
                 );
 
                 if (uniqueNewItems.length > 0) {
-                    logger.log(`[Study Debug] Appending ${uniqueNewItems.length} unique items to queue`);
                     setQueue(prev => [...prev, ...uniqueNewItems]);
                     queueRef.current = [...queueRef.current, ...uniqueNewItems];
+                    logger.log('[Study]', 'queue:append', {
+                        added: uniqueNewItems.length,
+                        queueLen: queueRef.current.length,
+                    });
                     // Prevent concurrent race condition where a stale prefetch overwrites our optimistically decremented due count
                     const firstStats = uniqueNewItems[0]?.session_stats;
                     if (firstStats && activeSubmissionsRef.current === 0) {
                         setStats(prev => ({ ...prev, due: firstStats.due }));
                     }
                 } else {
-                    logger.log(`[Study Debug] No new unique items to add`);
+                    logger.log('[Study]', 'queue:append', { added: 0, queueLen: queueRef.current.length });
                 }
             }
         } catch (err) {
@@ -332,7 +383,11 @@ function StudyContent() {
             return;
         }
         const next = queueRef.current[0];
-        logger.log(`[Study Debug] Advancing to next item:`, `${next.item_type}:${next.content_id}`);
+        logger.log('[Study]', 'queue:advance', {
+            to: `${next.item_type}:${next.content_id}`,
+            isNew: !!next.is_new,
+            queueLen: queueRef.current.length,
+        });
         
         setQueue(prev => prev.slice(1));
         queueRef.current = queueRef.current.slice(1);
@@ -345,7 +400,7 @@ function StudyContent() {
         // not for guests — the sample endpoint returns the same deck and would
         // reset the queue).
         if (mode !== 'random' && !isGuest && queueRef.current.length < 3) {
-            logger.log(`[Study Debug] Queue low (${queueRef.current.length} remaining), pre-fetching...`);
+            logger.log('[Study]', 'prefetch:trigger', { queueLen: queueRef.current.length });
             fetchItems(true);
         }
 
@@ -357,6 +412,13 @@ function StudyContent() {
         if (!currentItem) return;
 
         const reviewedItem = currentItem;
+        logger.log('[Study]', 'review:submit', {
+            item: `${reviewedItem.item_type}:${reviewedItem.content_id}`,
+            isNew: !!reviewedItem.is_new,
+            isPractice: !!reviewedItem.is_practice,
+            quality,
+            statsDueBefore: stats.due,
+        });
         setLastReviewedItem(reviewedItem);
         setLastReviewedQuality(quality);
         reviewedInSession.current.add(`${reviewedItem.item_type}:${reviewedItem.content_id}`);
@@ -367,7 +429,12 @@ function StudyContent() {
             setQueue(prev => [...prev, reviewedItem]);
             queueRef.current = [...queueRef.current, reviewedItem];
         } else {
-            setStats(prev => ({ ...prev, studied: prev.studied + 1, due: Math.max(0, prev.due - 1) }));
+            const wasDueItem = !reviewedItem.is_new;
+            setStats(prev => ({
+                ...prev,
+                studied: prev.studied + 1,
+                due: wasDueItem ? Math.max(0, prev.due - 1) : prev.due,
+            }));
         }
 
         // Check for stale session before advancing (guests skip — no real SRS state)
