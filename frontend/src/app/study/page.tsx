@@ -367,7 +367,12 @@ function StudyContent() {
             setQueue(prev => [...prev, reviewedItem]);
             queueRef.current = [...queueRef.current, reviewedItem];
         } else {
-            setStats(prev => ({ ...prev, studied: prev.studied + 1, due: Math.max(0, prev.due - 1) }));
+            const wasDueItem = !reviewedItem.is_new;
+            setStats(prev => ({
+                ...prev,
+                studied: prev.studied + 1,
+                due: wasDueItem ? Math.max(0, prev.due - 1) : prev.due,
+            }));
         }
 
         // Check for stale session before advancing (guests skip — no real SRS state)
