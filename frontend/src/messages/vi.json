@@ -534,11 +534,15 @@
     "Grade 5: Proficient": "Danh sách tần suất theo cấp lớp để học có hệ thống.",
     "Standard Nôm Curriculum": "Chương trình học chữ Nôm tiêu chuẩn dành cho người mới bắt đầu, giúp xây dựng nền tảng vững chắc.",
     "Common Animals": "Danh sách các loài động vật thường gặp viết bằng chữ Nôm.",
-    "Kinh Tin Kính (Apostles' Creed)": "Kinh Tin Kính trích từ Borg.tonch.18, một bản thảo cầu nguyện của người Công giáo Việt Nam thế kỷ 18 do Philipphê Bỉnh sưu tập, hiện lưu giữ tại Thư Viện Tông Tòa Vatican. Bản phiên âm đầy đủ bởi Nguyễn Nam: https://www.digitizingvietnam.com/en/our-collections/the-han-nom-catholic-prayer-philipphe-binh/borg-tonch-18"
+    "Kinh Tin Kính (Apostles' Creed)": "Kinh Tin Kính trích từ Borg.tonch.18, một bản thảo cầu nguyện của người Công giáo Việt Nam thế kỷ 18 do Philipphê Bỉnh sưu tập, hiện lưu giữ tại Thư Viện Tông Tòa Vatican. Bản phiên âm đầy đủ bởi Nguyễn Nam: https://www.digitizingvietnam.com/en/our-collections/the-han-nom-catholic-prayer-philipphe-binh/borg-tonch-18",
+    "Kinh Thiên Chúa (Lord's Prayer)": "Kinh Thiên Chúa (Pater Noster) trích từ Borg.tonch.18, một bản thảo cầu nguyện của người Công giáo Việt Nam thế kỷ 18 do Philipphê Bỉnh sưu tập, hiện lưu giữ tại Thư Viện Tông Tòa Vatican. Bản phiên âm đầy đủ bởi Nguyễn Nam: https://www.digitizingvietnam.com/en/our-collections/the-han-nom-catholic-prayer-philipphe-binh/borg-tonch-18",
+    "Kinh A-ve (Hail Mary)": "Kinh A-ve (Ave Maria) trích từ Borg.tonch.18, một bản thảo cầu nguyện của người Công giáo Việt Nam thế kỷ 18 do Philipphê Bỉnh sưu tập, hiện lưu giữ tại Thư Viện Tông Tòa Vatican. Bản phiên âm đầy đủ bởi Nguyễn Nam: https://www.digitizingvietnam.com/en/our-collections/the-han-nom-catholic-prayer-philipphe-binh/borg-tonch-18"
   },
   "textTitles": {
     "Standard Nôm Curriculum": "Chương Trình Học Nôm Tiêu Chuẩn",
     "Common Animals": "Các Loài Động Vật Thường Gặp",
-    "Kinh Tin Kính (Apostles' Creed)": "Kinh Tin Kính"
+    "Kinh Tin Kính (Apostles' Creed)": "Kinh Tin Kính",
+    "Kinh Thiên Chúa (Lord's Prayer)": "Kinh Thiên Chúa",
+    "Kinh A-ve (Hail Mary)": "Kinh A-ve"
   }
 }
