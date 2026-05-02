@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
@@ -38,6 +39,8 @@ interface UserInfo {
 }
 
 export default function TextDetailPage() {
+    const t = useTranslations('library.text');
+    const tc = useTranslations('common');
     const params = useParams();
     const router = useRouter();
     const textId = params.id;
@@ -122,7 +125,7 @@ export default function TextDetailPage() {
             cancelEdit();
         } catch (err) {
             logger.error('Failed to update line:', err);
-            alert('Failed to update line. Please try again.');
+            alert(t('updateFailed'));
         }
     };
 
@@ -165,7 +168,7 @@ export default function TextDetailPage() {
                         </div>
                     </Link>
                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] leading-none">
-                        Classical Repository
+                        {t('kicker')}
                     </div>
                 </div>
 
@@ -173,7 +176,7 @@ export default function TextDetailPage() {
                     {data.text_title}
                 </h1>
                 <p className="text-text-secondary italic mt-2 opacity-60 text-lg">
-                    by {data.author}
+                    {t('byAuthor', { author: data.author })}
                 </p>
             </header>
 
@@ -186,7 +189,7 @@ export default function TextDetailPage() {
                         onClick={() => handlePageChange(1)}
                         disabled={page === 1}
                         className="font-black py-2 px-3 text-[10px]"
-                        title="First page"
+                        title={t('firstPage')}
                     >
                         ⟪
                     </Button>
@@ -197,7 +200,7 @@ export default function TextDetailPage() {
                         disabled={page === 1}
                         className="font-black py-2 px-4 text-[10px]"
                     >
-                        PREVIOUS
+                        {tc('previous')}
                     </Button>
                     <span className="text-xs font-black text-text-primary uppercase tracking-widest min-w-[100px] text-center">
                         {page} <span className="text-text-secondary opacity-30 mx-1">/</span> {data.total_pages}
@@ -209,7 +212,7 @@ export default function TextDetailPage() {
                         disabled={page === data.total_pages}
                         className="font-black py-2 px-4 text-[10px]"
                     >
-                        NEXT
+                        {tc('next')}
                     </Button>
                     <Button
                         variant="secondary"
@@ -217,7 +220,7 @@ export default function TextDetailPage() {
                         onClick={() => handlePageChange(data.total_pages)}
                         disabled={page === data.total_pages}
                         className="font-black py-2 px-3 text-[10px]"
-                        title="Last page"
+                        title={t('lastPage')}
                     >
                         ⟫
                     </Button>
@@ -225,7 +228,7 @@ export default function TextDetailPage() {
 
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                     <form onSubmit={handleGoto} className="flex items-center gap-3">
-                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Page:</span>
+                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{t('page')}</span>
                         <input
                             type="number"
                             value={gotoPage}
@@ -234,10 +237,10 @@ export default function TextDetailPage() {
                             min={1}
                             max={data.total_pages}
                         />
-                        <Button type="submit" variant="ghost" className="text-[10px] font-black p-2">GO</Button>
+                        <Button type="submit" variant="ghost" className="text-[10px] font-black p-2">{tc('go')}</Button>
                     </form>
                     <form onSubmit={handleGotoLine} className="flex items-center gap-3">
-                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Line:</span>
+                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{t('line')}</span>
                         <input
                             type="number"
                             value={gotoLine}
@@ -246,7 +249,7 @@ export default function TextDetailPage() {
                             min={1}
                             max={data.total_lines}
                         />
-                        <Button type="submit" variant="ghost" className="text-[10px] font-black p-2">GO</Button>
+                        <Button type="submit" variant="ghost" className="text-[10px] font-black p-2">{tc('go')}</Button>
                     </form>
                 </div>
             </GlassCard>
@@ -257,11 +260,11 @@ export default function TextDetailPage() {
                     <thead>
                         <tr className="bg-white/5 border-b border-white/10">
                             <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest w-12 text-center">#</th>
-                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">Original Nôm</th>
-                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">Transcription</th>
-                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest w-24 text-center">Status</th>
+                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">{t('tableOriginal')}</th>
+                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">{t('tableTranscription')}</th>
+                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest w-24 text-center">{t('tableStatus')}</th>
                             {user?.is_admin && (
-                                <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest w-24 text-center">Actions</th>
+                                <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest w-24 text-center">{t('tableActions')}</th>
                             )}
                         </tr>
                     </thead>
@@ -318,15 +321,15 @@ export default function TextDetailPage() {
                                 <td className="p-4 md:p-6 text-center align-middle">
                                     {line.status === 'learned' ? (
                                         <span className="px-2 py-1 rounded-md text-[9px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">
-                                            Learned
+                                            {t('statusLearned')}
                                         </span>
                                     ) : line.status === 'learning' ? (
                                         <span className="px-2 py-1 rounded-md text-[9px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-widest">
-                                            Learning
+                                            {t('statusLearning')}
                                         </span>
                                     ) : (
                                         <span className="px-2 py-1 rounded-md text-[9px] font-black bg-white/5 text-text-secondary/40 border border-white/10 uppercase tracking-widest group-hover:opacity-100 transition-opacity">
-                                            New
+                                            {t('statusNew')}
                                         </span>
                                     )}
                                 </td>
@@ -339,7 +342,7 @@ export default function TextDetailPage() {
                                                     onClick={() => saveEdit(line.id)}
                                                     className="text-[9px] px-3 py-1"
                                                 >
-                                                    SAVE
+                                                    {t('save')}
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
@@ -347,7 +350,7 @@ export default function TextDetailPage() {
                                                     onClick={cancelEdit}
                                                     className="text-[9px] px-3 py-1"
                                                 >
-                                                    CANCEL
+                                                    {t('cancel')}
                                                 </Button>
                                             </div>
                                         ) : (
@@ -357,7 +360,7 @@ export default function TextDetailPage() {
                                                 onClick={() => startEdit(line)}
                                                 className="text-[9px] px-3 py-1"
                                             >
-                                                EDIT
+                                                {t('edit')}
                                             </Button>
                                         )}
                                     </td>
@@ -370,7 +373,7 @@ export default function TextDetailPage() {
 
             <div className="mt-8 text-center">
                 <p className="text-[10px] font-black text-text-secondary/30 uppercase tracking-[0.4em]">
-                    {data.total_lines} total items
+                    {t('totalItems', { count: data.total_lines })}
                 </p>
             </div>
 

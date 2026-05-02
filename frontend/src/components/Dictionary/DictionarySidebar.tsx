@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { GlassCard, Button } from '@/components/ui';
 
 export interface DictCharacter {
@@ -70,11 +73,8 @@ interface DictionarySidebarProps {
     onViewLine?: (lineId: number) => void;
     onBackToLine: () => void;
     onAddToList?: (item: { id: number; type: 'line' | 'character'; name: string }) => void;
-    /** Status to display — if omitted, no status card is shown */
     status?: 'unseen' | 'learning' | 'learned';
-    /** Whether to show the "Back to Line" button in char view. False when viewing a standalone character. */
     showBackToLine?: boolean;
-    /** Whether to show inline "+ Add" buttons next to each character in the breakdown. Default true. */
     showInlineAdd?: boolean;
 }
 
@@ -92,6 +92,8 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
     showBackToLine = true,
     showInlineAdd = true,
 }) => {
+    const t = useTranslations('dictionary');
+
     if (dictLoading || charDictLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -108,7 +110,7 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
             </svg>
-            Back
+            {t('back')}
         </button>
     ) : null;
 
@@ -117,7 +119,6 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
             <div className="space-y-4 animate-in fade-in duration-200">
                 {backButton}
 
-                {/* Character header */}
                 <GlassCard className="!p-4 border-white/5">
                     <div className="font-nom text-5xl text-text-primary text-center leading-relaxed mb-1">
                         {charDictData.nom}
@@ -152,11 +153,10 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                     })()}
                 </GlassCard>
 
-                {/* Variants */}
                 {charDictData.variants.length > 0 && (
                     <GlassCard className="!p-4 border-white/5">
                         <div className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                            Variants
+                            {t('variants')}
                         </div>
                         <div className="space-y-1">
                             {charDictData.variants.map((v) => (
@@ -177,11 +177,10 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                     </GlassCard>
                 )}
 
-                {/* Homophones */}
                 {charDictData.homophones.length > 0 && (
                     <GlassCard className="!p-4 border-white/5">
                         <div className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                            Homophones
+                            {t('homophones')}
                         </div>
                         <div className="space-y-1">
                             {charDictData.homophones.map((h) => (
@@ -202,11 +201,10 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                     </GlassCard>
                 )}
 
-                {/* Examples */}
                 {charDictData.examples.length > 0 && (
                     <GlassCard className="!p-4 border-white/5">
                         <div className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                            Examples
+                            {t('examples')}
                         </div>
                         <div className="space-y-3">
                             {charDictData.examples.slice(0, 5).map((ex) => {
@@ -242,7 +240,6 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                     </GlassCard>
                 )}
 
-                {/* Add Character to List */}
                 {onAddToList && (
                     <Button
                         onClick={() => onAddToList({ id: charDictData.id, type: 'character', name: charDictData.nom })}
@@ -252,7 +249,7 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                             </svg>
-                            Add Character to List
+                            {t('addCharToList')}
                         </span>
                     </Button>
                 )}
@@ -264,7 +261,6 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
         return (
             <div className="space-y-4 animate-in fade-in duration-200">
                 {backButton}
-                {/* Nom + Quoc Ngu */}
                 <GlassCard className="!p-4 border-white/5">
                     <div className="font-nom text-3xl text-text-primary text-center leading-relaxed mb-2">
                         {dictData.nom}
@@ -284,23 +280,22 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                                     key={`${src.text_id}-${src.line_number}-${i}`}
                                     className="text-[10px] font-black text-text-secondary/50 uppercase tracking-[0.2em] text-center"
                                 >
-                                    {src.text_title} <span className="opacity-40 mx-1">·</span> Line {src.line_number}
+                                    {src.text_title} <span className="opacity-40 mx-1">·</span> {t('lineFormat', { number: src.line_number })}
                                 </div>
                             ))}
                             {dictData.sources.length > 3 && (
                                 <div className="text-[10px] font-black text-text-secondary/30 uppercase tracking-[0.2em] text-center">
-                                    +{dictData.sources.length - 3} more
+                                    {t('moreCount', { count: dictData.sources.length - 3 })}
                                 </div>
                             )}
                         </div>
                     )}
                 </GlassCard>
 
-                {/* Character Breakdown */}
                 {dictData.characters.length > 0 && (
                     <GlassCard className="!p-4 border-white/5">
                         <div className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                            Character Breakdown
+                            {t('charBreakdown')}
                         </div>
                         <div className="space-y-1">
                             {dictData.characters.map((char, idx) => (
@@ -325,7 +320,7 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                                             }}
                                             className="text-[10px] font-black uppercase tracking-widest px-2 py-1 opacity-0 group-hover/char:opacity-100 transition-opacity"
                                         >
-                                            + Add
+                                            {t('addInline')}
                                         </Button>
                                     )}
                                 </div>
@@ -334,20 +329,17 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                     </GlassCard>
                 )}
 
-                {/* Analysis / Compounds */}
                 {(() => {
                     const analysis = dictData.analysis;
                     if (!analysis) return null;
 
-                    // Object form: { breakdown?, compounds? } — show compounds only
-                    // (breakdown is already covered by Character Breakdown section)
                     if (!Array.isArray(analysis)) {
                         const compounds = analysis.compounds;
                         if (!compounds || compounds.length === 0) return null;
                         return (
                             <GlassCard className="!p-4 border-white/5">
                                 <div className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                                    Compounds & Phrases
+                                    {t('compounds')}
                                 </div>
                                 <div className="space-y-3">
                                     {compounds.map((item, i) => (
@@ -372,12 +364,11 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                         );
                     }
 
-                    // Legacy flat array form
                     if (analysis.length === 0) return null;
                     return (
                         <GlassCard className="!p-4 border-white/5">
                             <div className="text-xs font-black text-text-secondary uppercase tracking-[0.2em] mb-3">
-                                Analysis
+                                {t('analysis')}
                             </div>
                             <div className="space-y-3">
                                 {analysis.map((item, i) => (
@@ -402,31 +393,29 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                     );
                 })()}
 
-                {/* Status */}
                 {status && (
                     <GlassCard className="!p-4 border-white/5">
                         <div className="flex items-center justify-between">
                             <div className="text-xs font-black text-text-secondary uppercase tracking-[0.2em]">
-                                Status
+                                {t('status')}
                             </div>
                             {status === 'learned' ? (
                                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">
-                                    Learned
+                                    {t('statusLearned')}
                                 </span>
                             ) : status === 'learning' ? (
                                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-widest">
-                                    Learning
+                                    {t('statusLearning')}
                                 </span>
                             ) : (
                                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-white/5 text-text-secondary/40 border border-white/10 uppercase tracking-widest">
-                                    New
+                                    {t('statusNew')}
                                 </span>
                             )}
                         </div>
                     </GlassCard>
                 )}
 
-                {/* Add Line to List Button */}
                 {onAddToList && (
                     <Button
                         onClick={() => onAddToList({ id: dictData.id, type: 'line', name: dictData.nom })}
@@ -436,7 +425,7 @@ export const DictionarySidebar: React.FC<DictionarySidebarProps> = ({
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                             </svg>
-                            Add Line to List
+                            {t('addLineToList')}
                         </span>
                     </Button>
                 )}

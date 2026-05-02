@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit, Lora } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,23 +28,28 @@ import { Navbar } from "@/components/Navigation/Navbar";
 import { Footer } from "@/components/Navigation/Footer";
 import { GuestBanner } from "@/components/ui/GuestBanner";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="vi" className={`${inter.variable} ${outfit.variable} ${lora.variable}`}>
+    <html lang={locale} className={`${inter.variable} ${outfit.variable} ${lora.variable}`}>
       <body className="antialiased font-outfit">
-        <div id="app-background"></div>
-        <div id="page-scroller">
-          <div className="main-wrapper container mx-auto px-4 pb-4 pt-2 md:pt-4 md:px-8 md:pb-8 w-full max-w-6xl">
-            <Navbar />
-            <GuestBanner />
-            {children}
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <div id="app-background"></div>
+          <div id="page-scroller">
+            <div className="main-wrapper container mx-auto px-4 pb-4 pt-2 md:pt-4 md:px-8 md:pb-8 w-full max-w-6xl">
+              <Navbar />
+              <GuestBanner />
+              {children}
+            </div>
+            <Footer />
           </div>
-          <Footer />
-        </div>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

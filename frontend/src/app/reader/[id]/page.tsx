@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
@@ -42,6 +43,8 @@ const WORD_LIST_AUTHORS = ['Chunom.org', 'Digitizing Vietnam Team'];
 
 export default function ReaderDetailPage() {
     useGuestOrAuthGuard();
+    const t = useTranslations('reader');
+    const tc = useTranslations('common');
     const params = useParams();
     const router = useRouter();
     const textId = params.id;
@@ -157,7 +160,7 @@ export default function ReaderDetailPage() {
                 </button>
 
                 <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.3em] mb-4">
-                    Texts
+                    {t('texts')}
                 </div>
                 <div className="space-y-1">
                     {texts.map((text) => (
@@ -201,7 +204,7 @@ export default function ReaderDetailPage() {
                             </div>
                         </Link>
                         <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] leading-none">
-                            Reader Mode
+                            {t('title')}
                         </div>
                     </div>
 
@@ -210,7 +213,7 @@ export default function ReaderDetailPage() {
                     </h1>
                     <div className="flex items-center justify-between mt-2">
                         <p className="text-text-secondary italic opacity-60 text-base">
-                            by {data.author}
+                            {t('byAuthor', { author: data.author })}
                         </p>
                         <Button
                             variant={showQuocNgu ? 'secondary' : 'ghost'}
@@ -218,7 +221,7 @@ export default function ReaderDetailPage() {
                             onClick={() => setShowQuocNgu(!showQuocNgu)}
                             className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5"
                         >
-                            {showQuocNgu ? 'Hide' : 'Show'} Quốc Ngữ
+                            {showQuocNgu ? t('hideQuocNgu') : t('showQuocNgu')}
                         </Button>
                     </div>
                 </header>
@@ -271,7 +274,7 @@ export default function ReaderDetailPage() {
                             disabled={page === 1}
                             className="font-black py-2 px-4 text-[10px]"
                         >
-                            PREVIOUS
+                            {tc('previous')}
                         </Button>
                         <span className="text-xs font-black text-text-primary uppercase tracking-widest">
                             {page} <span className="text-text-secondary opacity-30 mx-1">/</span> {data.total_pages}
@@ -283,14 +286,14 @@ export default function ReaderDetailPage() {
                             disabled={page === data.total_pages}
                             className="font-black py-2 px-4 text-[10px]"
                         >
-                            NEXT
+                            {tc('next')}
                         </Button>
                     </GlassCard>
                 )}
 
                 <div className="mt-6 text-center">
                     <p className="text-[10px] font-black text-text-secondary/30 uppercase tracking-[0.4em]">
-                        {data.total_lines} total lines
+                        {t('totalLines', { count: data.total_lines })}
                     </p>
                 </div>
             </main>
@@ -303,7 +306,7 @@ export default function ReaderDetailPage() {
             >
                 {!selectedLine ? (
                     <div className="text-text-secondary/40 text-sm italic text-center py-12">
-                        Tap a line to view its dictionary entry
+                        {t('tapPrompt')}
                     </div>
                 ) : (
                     <DictionarySidebar

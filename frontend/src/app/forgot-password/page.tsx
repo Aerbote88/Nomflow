@@ -2,9 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { GlassCard, Button } from '@/components/ui';
 
 export default function ForgotPasswordPage() {
+    const t = useTranslations('auth.forgot');
+    const tc = useTranslations('common');
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
@@ -26,10 +29,10 @@ export default function ForgotPasswordPage() {
                 setSent(true);
             } else {
                 const data = await res.json();
-                setError(data.detail || 'Something went wrong. Please try again.');
+                setError(data.detail || t('errorGeneric'));
             }
         } catch {
-            setError('An unexpected error occurred.');
+            setError(tc('errorUnexpected'));
         } finally {
             setLoading(false);
         }
@@ -44,7 +47,7 @@ export default function ForgotPasswordPage() {
                     NômFlow
                 </div>
                 <h1 className="text-5xl md:text-6xl font-display font-bold text-text-primary tracking-tight">
-                    Reset Password
+                    {t('title')}
                 </h1>
             </header>
 
@@ -57,24 +60,24 @@ export default function ForgotPasswordPage() {
                             </svg>
                         </div>
                         <div>
-                            <p className="text-text-primary font-bold mb-2">Check your email</p>
+                            <p className="text-text-primary font-bold mb-2">{t('checkEmailTitle')}</p>
                             <p className="text-sm text-text-secondary leading-relaxed">
-                                If an account with that email exists, we've sent a reset link. Check your inbox (and spam folder).
+                                {t('checkEmailBody')}
                             </p>
                         </div>
                         <Link href="/login" className="block text-[10px] font-black text-accent-primary hover:text-accent-primary/80 transition-colors uppercase tracking-widest">
-                            Back to Sign In
+                            {t('backToSignIn')}
                         </Link>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-8">
                         <p className="text-sm text-text-secondary leading-relaxed">
-                            Enter the email address on your account and we'll send you a reset link.
+                            {t('instructions')}
                         </p>
 
                         <div>
                             <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
-                                Email Address
+                                {t('emailLabel')}
                             </label>
                             <input
                                 type="email"
@@ -82,7 +85,7 @@ export default function ForgotPasswordPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className="w-full px-5 py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
-                                placeholder="you@example.com"
+                                placeholder={t('emailPlaceholder')}
                             />
                         </div>
 
@@ -97,13 +100,13 @@ export default function ForgotPasswordPage() {
                             disabled={loading}
                             className="w-full py-5 text-sm font-black tracking-[0.2em] relative overflow-hidden"
                         >
-                            <span className="relative z-10">{loading ? 'SENDING...' : 'SEND RESET LINK'}</span>
+                            <span className="relative z-10">{loading ? t('sending') : t('send')}</span>
                             {loading && <div className="absolute inset-0 bg-accent-gold/20 animate-pulse" />}
                         </Button>
 
                         <p className="text-center text-[10px] font-black text-text-secondary/60 uppercase tracking-widest">
                             <Link href="/login" className="text-accent-primary hover:text-accent-primary/80 transition-colors underline decoration-accent-primary/30">
-                                Back to Sign In
+                                {t('backToSignIn')}
                             </Link>
                         </p>
                     </form>

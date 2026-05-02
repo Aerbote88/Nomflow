@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { GlassCard } from '@/components/ui';
 
 interface StudyCardProps {
@@ -26,10 +29,11 @@ export const StudyCard: React.FC<StudyCardProps> = ({
     contentId,
     onNomClick
 }) => {
+    const t = useTranslations('studyCard');
+
     return (
         <GlassCard className="w-full max-w-[600px] min-h-[280px] md:min-h-[450px] flex flex-col justify-center items-center relative overflow-hidden group transition-[background-color,border-color,box-shadow,transform,opacity] duration-500">
             <div className="w-full text-center z-10 p-4 md:p-8">
-                {/* Front and Back Container (Stabilized) */}
                 <div className="flex flex-col items-center justify-center min-h-[180px] md:min-h-[300px]">
                     <button
                         onClick={onNomClick}
@@ -40,7 +44,7 @@ export const StudyCard: React.FC<StudyCardProps> = ({
 
                     {sourceTitle && (
                         <div className="text-[10px] md:text-xs text-text-secondary uppercase tracking-widest font-black opacity-40 mt-2 italic">
-                            {sourceTitle} {lineNumber ? `• Line ${lineNumber}` : ''}
+                            {sourceTitle} {lineNumber ? t('lineFormat', { number: lineNumber }) : ''}
                         </div>
                     )}
 
@@ -52,7 +56,6 @@ export const StudyCard: React.FC<StudyCardProps> = ({
                     )}
                 </div>
 
-                {/* Back of Card (Fades in without shifting layout) */}
                 <div className={`mt-1.5 pt-1.5 md:mt-8 md:pt-8 border-t border-white/10 w-full overflow-hidden transition-all duration-700 ease-out ${isFlipped ? 'opacity-100 translate-y-0 scale-100 h-auto' : 'opacity-0 translate-y-4 scale-95 h-0 pointer-events-none'}`}>
                     <div className="text-2xl md:text-4xl font-serif font-semibold text-accent-primary mb-1 md:mb-2">
                         {quocNgu}

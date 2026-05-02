@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui';
 
 interface StudyHeaderProps {
@@ -8,7 +11,18 @@ interface StudyHeaderProps {
     title?: string;
 }
 
-export const StudyHeader: React.FC<StudyHeaderProps> = ({ mode, progress, title = "Study Session" }) => {
+export const StudyHeader: React.FC<StudyHeaderProps> = ({ mode, progress, title }) => {
+    const t = useTranslations('study.header');
+
+    let kicker: string;
+    if (mode === 'srs') {
+        kicker = title ? t('srsLabel', { title }) : t('srsReview');
+    } else if (mode === 'random') {
+        kicker = title ? t('randomLabel', { title }) : t('random');
+    } else {
+        kicker = t('custom');
+    }
+
     return (
         <div className="flex justify-between items-center mb-4 md:mb-6 w-full max-w-[600px] mx-auto">
             <div className="flex items-center gap-3">
@@ -17,16 +31,12 @@ export const StudyHeader: React.FC<StudyHeaderProps> = ({ mode, progress, title 
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Exit</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{t('exit')}</span>
                     </Button>
                 </Link>
                 <div className="flex flex-col">
                     <span className="text-[10px] font-black text-accent-primary uppercase tracking-[0.2em] leading-none mb-0.5">
-                        {mode === 'srs' 
-                            ? (title && title !== "Study Session" ? `SRS: ${title}` : 'SRS Review') 
-                            : mode === 'random' 
-                                ? (title && title !== "Study Session" ? `Random: ${title}` : 'Random')
-                                : 'Custom Study'}
+                        {kicker}
                     </span>
                     <span className="text-xs font-bold text-text-primary uppercase tracking-widest">
                         {progress}
@@ -38,7 +48,7 @@ export const StudyHeader: React.FC<StudyHeaderProps> = ({ mode, progress, title 
                 <div className="flex flex-col items-end">
                     <span className="text-[10px] text-emerald-500 uppercase tracking-widest font-black flex items-center gap-1">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                        Progress Saved
+                        {t('progressSaved')}
                     </span>
                 </div>
             </div>

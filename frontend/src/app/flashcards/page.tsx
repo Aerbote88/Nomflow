@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
@@ -25,6 +26,7 @@ interface VocabItem {
 
 export default function VocabPage() {
     useGuestOrAuthGuard();
+    const t = useTranslations('flashcards');
     const [vocab, setVocab] = useState<VocabItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -83,7 +85,7 @@ export default function VocabPage() {
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
         if (date <= new Date()) {
-            return <span className="text-pink-500 font-black tracking-wider bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">DUE NOW</span>;
+            return <span className="text-pink-500 font-black tracking-wider bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">{t('dueNow')}</span>;
         }
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
@@ -99,8 +101,8 @@ export default function VocabPage() {
     return (
         <div className="max-w-[1000px] mx-auto py-4 md:py-8 px-4 md:px-6 fade-in-stable relative">
             <header className="mb-6 md:mb-12">
-                <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">{isGuest ? 'Demo Deck' : 'Your Archive'}</div>
-                <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">Flashcards</h1>
+                <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">{isGuest ? t('kickerDemo') : t('kickerArchive')}</div>
+                <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">{t('title')}</h1>
             </header>
 
             {isGuest && vocab.length > 0 && (
@@ -109,30 +111,28 @@ export default function VocabPage() {
                     className="block w-full md:w-auto md:inline-flex mb-6 md:mb-8 px-6 py-4 rounded-xl bg-accent-primary/10 hover:bg-accent-primary/15 border border-accent-primary/30 text-accent-primary text-center transition-all"
                 >
                     <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em]">
-                        Start Random Review →
+                        {t('startRandom')}
                     </span>
                 </Link>
             )}
 
-            {/* Stats */}
             {!isGuest && (
                 <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
                     <GlassCard className="!p-3 md:!p-6 text-center">
-                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Total</div>
+                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">{t('total')}</div>
                         <div className="text-xl md:text-3xl font-black text-text-primary">{stats.total}</div>
                     </GlassCard>
                     <GlassCard className="!p-3 md:!p-6 text-center">
-                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learning</div>
+                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">{t('learning')}</div>
                         <div className="text-xl md:text-3xl font-black text-amber-500">{stats.learning}</div>
                     </GlassCard>
                     <GlassCard className="!p-3 md:!p-6 text-center">
-                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">Learned</div>
+                        <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">{t('learned')}</div>
                         <div className="text-xl md:text-3xl font-black text-emerald-500">{stats.learned}</div>
                     </GlassCard>
                 </div>
             )}
 
-            {/* Search & Filter */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                     <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary/40 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,7 +140,7 @@ export default function VocabPage() {
                     </svg>
                     <input
                         type="text"
-                        placeholder="Search Nôm or Quốc Ngữ..."
+                        placeholder={t('search')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-11 pr-4 py-2 md:py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary font-medium placeholder:text-text-secondary/30 outline-none focus:border-accent-primary/50 transition-colors text-sm md:text-base"
@@ -152,9 +152,9 @@ export default function VocabPage() {
                         onChange={(e) => setTypeFilter(e.target.value as 'all' | 'character' | 'line')}
                         className="w-full px-4 py-2 md:py-3 bg-white/5 border border-white/10 rounded-xl text-text-primary font-bold appearance-none outline-none focus:border-accent-primary/50 transition-colors cursor-pointer text-sm md:text-base"
                     >
-                        <option value="all" className="bg-bg-primary">All Types</option>
-                        <option value="character" className="bg-bg-primary">Characters</option>
-                        <option value="line" className="bg-bg-primary">Lines</option>
+                        <option value="all" className="bg-bg-primary">{t('allTypes')}</option>
+                        <option value="character" className="bg-bg-primary">{t('characters')}</option>
+                        <option value="line" className="bg-bg-primary">{t('lines')}</option>
                     </select>
                     <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary/40 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -164,22 +164,21 @@ export default function VocabPage() {
 
             {searchTerm && (
                 <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 mb-4">
-                    Showing {filteredVocab.length} of {vocab.length} items
+                    {t('showing', { filtered: filteredVocab.length, total: vocab.length })}
                 </p>
             )}
 
-            {/* Table */}
             <GlassCard className="p-0 overflow-hidden border-white/5 shadow-2xl">
                 <div className="max-h-[600px] overflow-y-auto">
                     <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-bg-secondary/80 backdrop-blur-md border-b border-white/10">
-                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Nôm</th>
-                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Quốc Ngữ</th>
+                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">{t('tableNom')}</th>
+                                <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">{t('tableQuocNgu')}</th>
                                 {!isGuest && (
                                     <>
-                                        <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary hidden sm:table-cell">Status</th>
-                                        <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">Next Due</th>
+                                        <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary hidden sm:table-cell">{t('tableStatus')}</th>
+                                        <th className="px-3 md:px-6 py-3 md:py-4 font-black text-[9px] md:text-[10px] uppercase tracking-widest text-text-secondary">{t('tableNextDue')}</th>
                                     </>
                                 )}
                             </tr>
@@ -188,7 +187,7 @@ export default function VocabPage() {
                             {displayedVocab.length === 0 ? (
                                 <tr>
                                     <td colSpan={isGuest ? 2 : 4} className="px-6 py-16 text-center text-text-secondary/40 italic font-display text-xl">
-                                        No flashcards match your filters.
+                                        {t('noResults')}
                                     </td>
                                 </tr>
                             ) : (
@@ -213,11 +212,11 @@ export default function VocabPage() {
                                                 <td className="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
                                                     {item.is_learning ? (
                                                         <span className="px-2 py-1 bg-amber-500/10 text-amber-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-amber-500/20">
-                                                            Learning
+                                                            {t('statusLearning')}
                                                         </span>
                                                     ) : (
                                                         <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] md:text-[9px] font-black uppercase tracking-widest rounded-md border border-emerald-500/20">
-                                                            Learned
+                                                            {t('statusLearned')}
                                                         </span>
                                                     )}
                                                 </td>
@@ -235,7 +234,7 @@ export default function VocabPage() {
                     {filteredVocab.length > displayCount && (
                         <div className="p-6 text-center border-t border-white/5">
                             <Button variant="secondary" size="sm" onClick={() => setDisplayCount(prev => prev + 50)}>
-                                Load More Items
+                                {t('loadMore')}
                             </Button>
                         </div>
                     )}
@@ -261,7 +260,6 @@ export default function VocabPage() {
                 />
             </DictionaryPanel>
 
-            {/* Add to List Modal */}
             {modalItem && (
                 <AddToListModal
                     isOpen={isModalOpen}

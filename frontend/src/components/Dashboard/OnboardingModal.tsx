@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { Portal } from '@/components/ui';
@@ -13,6 +14,7 @@ interface OnboardingModalProps {
 }
 
 export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: OnboardingModalProps) {
+    const t = useTranslations('onboarding');
     const [saving, setSaving] = useState(false);
 
     if (!isOpen) return null;
@@ -43,13 +45,13 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
                 <div className="w-full max-w-2xl bg-bg-primary border border-accent-gold/30 rounded-3xl p-8 md:p-12 text-center shadow-2xl animate-in zoom-in-95 duration-300">
                     <div className="text-xs font-black text-accent-primary uppercase tracking-[0.3em] mb-3">
-                        Welcome to NômFlow
+                        {t('welcome')}
                     </div>
                     <h2 className="text-4xl md:text-5xl font-display font-bold text-text-primary mb-6">
-                        Ready to start your journey?
+                        {t('title')}
                     </h2>
                     <p className="text-text-secondary mb-12 text-lg leading-relaxed max-w-md mx-auto">
-                        Pick a classic text or a curriculum and start mastering Nôm today.
+                        {t('instructions')}
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -59,8 +61,8 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
                             className="p-8 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-accent-primary/50 transition-all group disabled:opacity-40"
                         >
                             <span className="text-3xl mb-4 block group-hover:scale-110 transition-transform">🎓</span>
-                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Nôm Curriculum</div>
-                            <p className="text-[10px] text-text-secondary opacity-60">A list of Nôm characters for common words from modern Vietnamese</p>
+                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">{t('curriculum')}</div>
+                            <p className="text-[10px] text-text-secondary opacity-60">{t('curriculumDesc')}</p>
                         </button>
 
                         <button
@@ -69,8 +71,8 @@ export function OnboardingModal({ isOpen, curriculumId, kieuId, onComplete }: On
                             className="p-8 rounded-2xl border border-white/10 bg-white/3 hover:bg-white/5 hover:border-accent-gold/50 transition-all group disabled:opacity-40"
                         >
                             <span className="text-3xl mb-4 block group-hover:scale-110 transition-transform">📜</span>
-                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Study Kim Vân Kiều</div>
-                            <p className="text-[10px] text-text-secondary opacity-60">Learn the masterpiece of Vietnamese literature</p>
+                            <div className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">{t('kieu')}</div>
+                            <p className="text-[10px] text-text-secondary opacity-60">{t('kieuDesc')}</p>
                         </button>
                     </div>
 

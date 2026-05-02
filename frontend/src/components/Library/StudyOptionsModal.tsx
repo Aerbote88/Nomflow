@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { GlassCard, Button, Portal } from '@/components/ui';
 
 interface StudyOptionsModalProps {
@@ -20,6 +21,7 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
     sourceName
 }) => {
     const router = useRouter();
+    const t = useTranslations('studyOptions');
     const [randomCount, setRandomCount] = useState(20);
 
     if (!isOpen) return null;
@@ -44,20 +46,20 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
     const options = [
         {
             id: 'srs',
-            title: 'SRS Review',
-            description: 'Review due items and learn new content with Spaced Repetition.',
+            title: t('srs'),
+            description: t('srsDesc'),
             icon: '🏛️',
             action: () => startStudy('srs'),
             color: 'border-accent-primary bg-accent-primary/5 hover:bg-accent-primary/10'
         },
         {
             id: 'random',
-            title: 'Random',
-            description: 'Study a random selection of items. No SRS stakes.',
+            title: t('random'),
+            description: t('randomDesc'),
             icon: '✨',
             customUI: (
                 <div className="mt-4 flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 pointer-events-auto">
-                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Session Size</span>
+                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{t('sessionSize')}</span>
                     <div className="flex items-center gap-3">
                         <span role="button" onClick={(e) => { e.stopPropagation(); setRandomCount(Math.max(5, randomCount - 5)); }} className="text-accent-primary p-1 hover:scale-125 transition-transform cursor-pointer select-none">-</span>
                         <span className="text-sm font-black text-text-primary w-6 text-center">{randomCount}</span>
@@ -70,8 +72,8 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
         },
         {
             id: 'challenge',
-            title: 'Challenge',
-            description: 'Progress line-by-line, type the reading. Compete on the leaderboard.',
+            title: t('challenge'),
+            description: t('challengeDesc'),
             icon: '⚔️',
             action: () => router.push(`/challenge?${sourceType === 'list' ? 'list_id' : 'text_id'}=${sourceId}`),
             color: 'border-red-500/30 bg-red-500/5 hover:bg-red-500/10'
@@ -94,11 +96,11 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
                 </button>
 
                 <div className="mb-8">
-                    <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.3em] mb-1">Study Path</div>
+                    <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.3em] mb-1">{t('kicker')}</div>
                     <h2 className="text-3xl font-display font-bold text-text-primary leading-tight">
                         {sourceName}
                     </h2>
-                    <p className="text-xs text-text-secondary mt-2 opacity-60">Choose your study mode.</p>
+                    <p className="text-xs text-text-secondary mt-2 opacity-60">{t('subtitle')}</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
@@ -131,7 +133,7 @@ export const StudyOptionsModal: React.FC<StudyOptionsModalProps> = ({
                         onClick={onClose}
                         className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] hover:text-text-primary transition-colors"
                     >
-                        Dismiss
+                        {t('dismiss')}
                     </button>
                 </div>
             </GlassCard>

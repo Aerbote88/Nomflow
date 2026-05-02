@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
 
 export default function LoginPage() {
     const router = useRouter();
+    const t = useTranslations('auth.login');
+    const tc = useTranslations('common');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -39,11 +42,11 @@ export default function LoginPage() {
                 window.location.href = '/dashboard';
             } else {
                 const data = await res.json();
-                setError(data.detail || 'Invalid username/email or password.');
+                setError(data.detail || t('errorInvalid'));
             }
         } catch (err) {
             logger.error(err);
-            setError('An unexpected error occurred during login.');
+            setError(t('errorUnexpected'));
         } finally {
             setLoading(false);
         }
@@ -56,7 +59,6 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 relative">
-            {/* Background Decorative Elements */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-gold/5 blur-[120px] rounded-full pointer-events-none" />
 
             <header className="mb-3 md:mb-6 flex justify-center animate-in fade-in slide-in-from-top-4 duration-1000">
@@ -75,7 +77,7 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-5 md:space-y-8" suppressHydrationWarning>
                     <div>
                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
-                            Username or Email
+                            {t('usernameOrEmail')}
                         </label>
                         <input
                             type="text"
@@ -83,14 +85,14 @@ export default function LoginPage() {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                             className="w-full px-5 py-3 md:py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
-                            placeholder="Enter your username or email..."
+                            placeholder={t('usernamePlaceholder')}
                             suppressHydrationWarning
                         />
                     </div>
 
                     <div>
                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
-                            Password
+                            {t('password')}
                         </label>
                         <input
                             type="password"
@@ -98,7 +100,7 @@ export default function LoginPage() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             className="w-full px-5 py-3 md:py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
-                            placeholder="••••••••"
+                            placeholder={t('passwordPlaceholder')}
                             suppressHydrationWarning
                         />
                     </div>
@@ -114,7 +116,7 @@ export default function LoginPage() {
                         disabled={loading}
                         className="w-full py-3.5 md:py-5 text-sm font-black tracking-[0.2em] relative overflow-hidden group"
                     >
-                        <span className="relative z-10">{loading ? 'SIGNING IN...' : 'SIGN IN'}</span>
+                        <span className="relative z-10">{loading ? t('signingIn') : t('signIn')}</span>
                         {loading && (
                             <div className="absolute inset-0 bg-accent-gold/20 animate-pulse" />
                         )}
@@ -122,16 +124,16 @@ export default function LoginPage() {
 
                     <div className="flex flex-col gap-2 md:gap-3 items-center">
                         <Link href="/forgot-password" className="text-[10px] font-black text-text-secondary/50 hover:text-accent-primary transition-colors uppercase tracking-widest">
-                            Forgot your password?
+                            {t('forgotPassword')}
                         </Link>
                         <p className="text-[10px] font-black text-text-secondary/60 uppercase tracking-widest">
-                            Don't have an account? <Link href="/register" className="text-accent-primary hover:text-accent-primary/80 transition-colors underline decoration-accent-primary/30">Register Now</Link>
+                            {t('noAccount')} <Link href="/register" className="text-accent-primary hover:text-accent-primary/80 transition-colors underline decoration-accent-primary/30">{t('registerNow')}</Link>
                         </p>
                     </div>
 
                     <div className="relative flex items-center gap-3">
                         <div className="flex-1 h-px bg-white/10" />
-                        <span className="text-[9px] font-black text-text-secondary/50 uppercase tracking-[0.3em]">or</span>
+                        <span className="text-[9px] font-black text-text-secondary/50 uppercase tracking-[0.3em]">{tc('or')}</span>
                         <div className="flex-1 h-px bg-white/10" />
                     </div>
 
@@ -141,7 +143,7 @@ export default function LoginPage() {
                         className="w-full py-3 md:py-4 rounded-xl bg-accent-primary/10 hover:bg-accent-primary/15 border-2 border-accent-primary/30 hover:border-accent-primary/60 text-accent-primary text-sm font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] group"
                     >
                         <span className="inline-flex items-center gap-2">
-                            Try the Demo
+                            {t('tryDemo')}
                             <span className="transition-transform group-hover:translate-x-1">→</span>
                         </span>
                     </button>

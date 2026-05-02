@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { SourceCard } from '@/components/Library/SourceCard';
@@ -31,12 +32,12 @@ interface UserSettings {
 
 export default function LibraryPage() {
     const router = useRouter();
+    const t = useTranslations('library');
     const [texts, setTexts] = useState<SourceText[]>([]);
     const [lists, setLists] = useState<StudyList[]>([]);
     const [settings, setSettings] = useState<UserSettings | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Modal State
     const [studyModal, setStudyModal] = useState<{ isOpen: boolean; type: 'text' | 'list' | null; id: number | null; name: string }>({
         isOpen: false,
         type: null,
@@ -77,7 +78,7 @@ export default function LibraryPage() {
                     active_list_id: type === 'list' ? id : null
                 })
             });
-            fetchData(); // Refresh state
+            fetchData();
         } catch (err) {
             logger.error('Failed to set active source:', err);
         }
@@ -100,18 +101,17 @@ export default function LibraryPage() {
             <header className="mb-6 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div>
                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2 leading-none">
-                        Your Repository
+                        {t('kicker')}
                     </div>
                     <h1 className="text-3xl md:text-6xl font-display font-bold text-text-primary tracking-tight">
-                        Library
+                        {t('title')}
                     </h1>
                 </div>
             </header>
 
-            {/* Premade Texts Section */}
             <section className="mb-10 md:mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                 <h2 className="text-[10px] md:text-sm font-black text-text-primary uppercase tracking-[0.3em] mb-6 md:mb-8 flex items-center gap-4">
-                    Curated Lists
+                    {t('curated')}
                     <div className="h-[1px] flex-grow bg-white/10" />
                 </h2>
                 <div className="grid grid-cols-1 gap-6">
@@ -132,11 +132,10 @@ export default function LibraryPage() {
                 </div>
             </section>
 
-            {/* Custom Lists Section */}
             <section className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
                 <div className="flex items-center justify-between mb-6 md:mb-8">
                     <h2 className="text-[10px] md:text-sm font-black text-text-primary uppercase tracking-[0.3em] flex items-center gap-4">
-                        Custom Lists
+                        {t('customLists')}
                         <div className="h-[1px] w-24 md:w-32 bg-white/10" />
                     </h2>
                     <Button
@@ -148,7 +147,7 @@ export default function LibraryPage() {
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
                             </svg>
-                            Create Custom List
+                            {t('createCustom')}
                         </span>
                     </Button>
                 </div>
@@ -162,7 +161,7 @@ export default function LibraryPage() {
                             📜
                         </div>
                         <p className="text-text-secondary font-black uppercase tracking-widest text-[10px] opacity-40 group-hover:opacity-100 transition-opacity">
-                            Create your first custom list
+                            {t('createFirst')}
                         </p>
                     </div>
                 ) : (

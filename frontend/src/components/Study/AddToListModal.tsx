@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { Button, GlassCard, Portal } from '@/components/ui';
@@ -20,6 +21,7 @@ interface AddToListModalProps {
 }
 
 export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: AddToListModalProps) {
+    const t = useTranslations('addToList');
     const [lists, setLists] = useState<List[]>([]);
     const [loading, setLoading] = useState(true);
     const [addingToList, setAddingToList] = useState<number | null>(null);
@@ -78,6 +80,8 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
 
     if (!isOpen) return null;
 
+    const itemTypeLabel = itemType === 'character' ? t('itemTypeCharacter') : t('itemTypeLine');
+
     return (
         <Portal>
             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -90,22 +94,22 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                 </button>
 
                 <div className="text-center mb-6">
-                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-accent-primary mb-2">Add to Collection</div>
-                    <h2 className="text-2xl font-display font-bold text-text-primary mb-3">Save Item</h2>
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-accent-primary mb-2">{t('kicker')}</div>
+                    <h2 className="text-2xl font-display font-bold text-text-primary mb-3">{t('title')}</h2>
                     <div className="inline-block px-4 py-2 bg-white/5 rounded-xl border border-white/10">
                         <span className="font-nom text-2xl text-text-primary">{itemName}</span>
-                        <span className="ml-2 text-[10px] text-text-secondary uppercase font-black tracking-widest">{itemType}</span>
+                        <span className="ml-2 text-[10px] text-text-secondary uppercase font-black tracking-widest">{itemTypeLabel}</span>
                     </div>
                 </div>
 
                 <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
                     {loading ? (
-                        <div className="text-center py-8 text-text-secondary/40 italic text-sm">Loading your lists...</div>
+                        <div className="text-center py-8 text-text-secondary/40 italic text-sm">{t('loadingLists')}</div>
                     ) : lists.length === 0 && !showCreate ? (
                         <div className="text-center py-8">
-                            <p className="text-text-secondary/60 italic mb-4 text-sm">No lists yet.</p>
+                            <p className="text-text-secondary/60 italic mb-4 text-sm">{t('noLists')}</p>
                             <Button onClick={() => setShowCreate(true)} variant="primary" size="sm">
-                                + Create a List
+                                {t('createOne')}
                             </Button>
                         </div>
                     ) : (
@@ -119,7 +123,7 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                                         {list.name}
                                     </h4>
                                     <p className="text-[10px] text-text-secondary/40 font-black uppercase tracking-widest">
-                                        {list.item_count} {list.item_count === 1 ? 'Item' : 'Items'}
+                                        {list.item_count} {list.item_count === 1 ? t('itemSingular') : t('itemPlural')}
                                     </p>
                                 </div>
                                 <Button
@@ -134,7 +138,7 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                                             <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                             ...
                                         </span>
-                                    ) : successId === list.id ? 'Saved!' : 'Add'}
+                                    ) : successId === list.id ? t('saved') : t('addBtn')}
                                 </Button>
                             </div>
                         ))
@@ -148,25 +152,25 @@ export function AddToListModal({ isOpen, onClose, itemId, itemType, itemName }: 
                             value={newListName}
                             onChange={e => setNewListName(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && createList()}
-                            placeholder="List name..."
+                            placeholder={t('namePlaceholder')}
                             autoFocus
                             className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-accent-primary/50 focus:outline-none text-text-primary text-sm placeholder:text-text-secondary/30"
                         />
                         <div className="flex gap-2">
                             <Button onClick={createList} disabled={creating || !newListName.trim()} variant="primary" size="sm" className="flex-1">
-                                {creating ? 'Creating...' : 'Create'}
+                                {creating ? t('creating') : t('create')}
                             </Button>
                             <Button onClick={() => { setShowCreate(false); setNewListName(''); }} variant="secondary" size="sm" className="flex-1">
-                                Cancel
+                                {t('cancel')}
                             </Button>
                         </div>
                     </div>
                 ) : (
                     <div className="mt-5 pt-4 border-t border-white/5 flex justify-between items-center">
                         {!loading && lists.length > 0 && (
-                            <Button onClick={() => setShowCreate(true)} variant="secondary" size="sm">+ New List</Button>
+                            <Button onClick={() => setShowCreate(true)} variant="secondary" size="sm">{t('newList')}</Button>
                         )}
-                        <Button onClick={onClose} variant="secondary" size="sm" className="ml-auto">Done</Button>
+                        <Button onClick={onClose} variant="secondary" size="sm" className="ml-auto">{t('done')}</Button>
                     </div>
                 )}
             </GlassCard>

@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui';
 
 interface ReviewControlsProps {
@@ -10,11 +13,13 @@ interface ReviewControlsProps {
 }
 
 export const ReviewControls: React.FC<ReviewControlsProps> = ({ isFlipped, onShow, onSubmit, intervals, isPractice }) => {
+    const t = useTranslations('reviewControls');
+
     if (!isFlipped) {
         return (
             <div className="w-full max-w-[600px] mt-4 md:mt-6">
                 <Button size="lg" className="w-full py-4 md:py-6 text-lg md:text-xl shadow-xl shadow-accent-primary/20" onClick={onShow}>
-                    Reveal Answer
+                    {t('reveal')}
                 </Button>
             </div>
         );
@@ -27,23 +32,23 @@ export const ReviewControls: React.FC<ReviewControlsProps> = ({ isFlipped, onSho
                     onClick={() => onSubmit(0)}
                     className="bg-red-500/15 hover:bg-red-500/25 border-2 border-red-500/30 hover:border-red-500/60 text-red-400 font-black py-3 md:py-5 rounded-xl active:scale-[0.98] transition-all"
                 >
-                    <span className="text-[10px] md:text-xs uppercase tracking-widest">✗ Incorrect</span>
+                    <span className="text-[10px] md:text-xs uppercase tracking-widest">{t('incorrect')}</span>
                 </button>
                 <button
                     onClick={() => onSubmit(2)}
                     className="bg-emerald-500/15 hover:bg-emerald-500/25 border-2 border-emerald-500/30 hover:border-emerald-500/60 text-emerald-400 font-black py-3 md:py-5 rounded-xl active:scale-[0.98] transition-all"
                 >
-                    <span className="text-[10px] md:text-xs uppercase tracking-widest">✓ Correct</span>
+                    <span className="text-[10px] md:text-xs uppercase tracking-widest">{t('correct')}</span>
                 </button>
             </div>
         );
     }
 
     const ratings = [
-        { label: 'Again', color: 'bg-red-500 hover:bg-red-400', value: 0 },
-        { label: 'Hard', color: 'bg-orange-500 hover:bg-orange-400', value: 1 },
-        { label: 'Good', color: 'bg-emerald-500 hover:bg-emerald-400', value: 2 },
-        { label: 'Easy', color: 'bg-blue-500 hover:bg-blue-400', value: 3 },
+        { label: t('again'), color: 'bg-red-500 hover:bg-red-400', value: 0 },
+        { label: t('hard'), color: 'bg-orange-500 hover:bg-orange-400', value: 1 },
+        { label: t('good'), color: 'bg-emerald-500 hover:bg-emerald-400', value: 2 },
+        { label: t('easy'), color: 'bg-blue-500 hover:bg-blue-400', value: 3 },
     ];
 
     return (

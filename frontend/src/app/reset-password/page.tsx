@@ -3,11 +3,14 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { GlassCard, Button } from '@/components/ui';
 
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
+    const t = useTranslations('auth.reset');
+    const tc = useTranslations('common');
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -17,18 +20,18 @@ function ResetPasswordForm() {
 
     useEffect(() => {
         if (!token) {
-            setError('Invalid or missing reset token.');
+            setError(t('errorMissingToken'));
         }
-    }, [token]);
+    }, [token, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password !== confirmPassword) {
-            setError('Passwords do not match.');
+            setError(t('errorMismatch'));
             return;
         }
         if (password.length < 6) {
-            setError('Password must be at least 6 characters.');
+            setError(t('errorTooShort'));
             return;
         }
 
@@ -46,10 +49,10 @@ function ResetPasswordForm() {
                 setDone(true);
             } else {
                 const data = await res.json();
-                setError(data.detail || 'Failed to reset password. The link may have expired.');
+                setError(data.detail || t('errorExpired'));
             }
         } catch {
-            setError('An unexpected error occurred.');
+            setError(tc('errorUnexpected'));
         } finally {
             setLoading(false);
         }
@@ -65,21 +68,21 @@ function ResetPasswordForm() {
                         </svg>
                     </div>
                     <div>
-                        <p className="text-text-primary font-bold mb-2">Password updated!</p>
-                        <p className="text-sm text-text-secondary">You can now sign in with your new password.</p>
+                        <p className="text-text-primary font-bold mb-2">{t('successTitle')}</p>
+                        <p className="text-sm text-text-secondary">{t('successBody')}</p>
                     </div>
                     <Link
                         href="/login"
                         className="inline-block px-6 py-3 bg-accent-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-accent-hover transition-colors"
                     >
-                        Sign In
+                        {t('signIn')}
                     </Link>
                 </div>
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div>
                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
-                            New Password
+                            {t('newPassword')}
                         </label>
                         <input
                             type="password"
@@ -88,13 +91,13 @@ function ResetPasswordForm() {
                             required
                             disabled={!token}
                             className="w-full px-5 py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
-                            placeholder="••••••••"
+                            placeholder={t('passwordPlaceholder')}
                         />
                     </div>
 
                     <div>
                         <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-2 px-1">
-                            Confirm Password
+                            {t('confirmPassword')}
                         </label>
                         <input
                             type="password"
@@ -103,7 +106,7 @@ function ResetPasswordForm() {
                             required
                             disabled={!token}
                             className="w-full px-5 py-4 rounded-xl bg-white/10 border-2 border-white/20 text-text-primary font-black outline-none focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/10 transition-all placeholder:text-white/30"
-                            placeholder="••••••••"
+                            placeholder={t('passwordPlaceholder')}
                         />
                     </div>
 
@@ -118,7 +121,7 @@ function ResetPasswordForm() {
                         disabled={loading || !token}
                         className="w-full py-5 text-sm font-black tracking-[0.2em] relative overflow-hidden"
                     >
-                        <span className="relative z-10">{loading ? 'UPDATING...' : 'SET NEW PASSWORD'}</span>
+                        <span className="relative z-10">{loading ? t('submitting') : t('submit')}</span>
                         {loading && <div className="absolute inset-0 bg-accent-gold/20 animate-pulse" />}
                     </Button>
                 </form>
@@ -128,6 +131,7 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+    const t = useTranslations('auth.reset');
     return (
         <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-gold/5 blur-[120px] rounded-full pointer-events-none" />
@@ -137,7 +141,7 @@ export default function ResetPasswordPage() {
                     NômFlow
                 </div>
                 <h1 className="text-5xl md:text-6xl font-display font-bold text-text-primary tracking-tight">
-                    New Password
+                    {t('title')}
                 </h1>
             </header>
 
