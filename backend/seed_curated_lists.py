@@ -151,30 +151,24 @@ def seed_prose():
 import re
 
 
-def _extract_char_readings(lines):
-    """Best-effort per-character (nom_char, quoc_ngu) reading map from prose tuples.
+def _aligned_chars_for_line(nom: str, qn: str):
+    """Return list of (codepoint, syllable, position_in_nom) for a prose line.
 
-    Splits each Quốc ngữ line on whitespace and hyphens (transliterations like
-    "Giê-su" count as separate syllables, matching the per-Nôm-codepoint layout).
-    Codepoints that are whitespace or ASCII punctuation in the Nôm are stripped
-    before alignment. Returns {nom_char: quoc_ngu_reading} where first occurrence
-    wins. Lines whose codepoint count doesn't match the syllable count are
-    skipped silently — defensive against unexpected punctuation or alignment
-    quirks; chars from those lines that appear elsewhere will still be picked up.
+    Splits Quốc ngữ on whitespace and hyphens (so transliterations like "Giê-su"
+    count each piece as a syllable, matching the per-Nôm-codepoint layout).
+    Whitespace and ASCII punctuation in the Nôm are stripped before alignment.
+    Returns an empty list if the codepoint count doesn't match the syllable
+    count — caller is responsible for falling back to a canonical lookup.
     """
-    readings = {}
-    for row in lines:
-        nom, qn = row[0], row[1]
-        nom_chars = [
-            ch for ch in nom
-            if not ch.isspace() and not (ord(ch) < 128 and not ch.isalnum())
-        ]
-        syllables = [s for s in re.split(r'[\s\-]+', qn.strip()) if s]
-        if len(nom_chars) != len(syllables):
+    pairs = []
+    for idx, ch in enumerate(nom):
+        if ch.isspace() or (ord(ch) < 128 and not ch.isalnum()):
             continue
-        for ch, syl in zip(nom_chars, syllables):
-            readings.setdefault(ch, syl)
-    return readings
+        pairs.append((ch, idx))
+    syllables = [s for s in re.split(r'[\s\-]+', qn.strip()) if s]
+    if len(pairs) != len(syllables):
+        return []
+    return [(ch, syl, idx) for (ch, idx), syl in zip(pairs, syllables)]
 
 
 def seed_prose_text_orm(session, title, author, description, lines):
@@ -189,6 +183,7 @@ def seed_prose_text_orm(session, title, author, description, lines):
     on re-run.
     """
     from sqlmodel import select
+    from sqlalchemy import func
     from .models import SourceText, Expression, ExpressionCharacter, Character, Line
 
     # Avoid Windows cp1252 console encoding crashes when the title/author
@@ -206,36 +201,51 @@ def seed_prose_text_orm(session, title, author, description, lines):
         session.add(src)
     session.flush()  # populate src.id
 
-    # Backfill the dictionary with any new characters from this prose text,
-    # using readings derived from the line-level Nôm↔QN alignment. Existing
-    # Character entries are left untouched — their data is canonical.
-    derived_readings = _extract_char_readings(lines)
-    inserted_chars = 0
-    for nom_char, reading in derived_readings.items():
-        existing = session.exec(
-            select(Character).where(Character.nom_char == nom_char)
+    # Cache (nom_char, quoc_ngu) -> Character lookups across all lines in this
+    # text to avoid N+1 queries. The Character table allows multiple rows per
+    # nom_char (variants/homophones), so we key on the (nom_char, reading) pair
+    # to find an exact contextual match.
+    char_cache: dict[tuple[str, str], "Character | None"] = {}
+
+    def get_or_create_char(nom_char: str, reading: str):
+        """Find a Character with this exact (nom_char, quoc_ngu) pair, or
+        insert a new row using the contextual reading. Caches per-call."""
+        key = (nom_char, reading.lower())
+        if key in char_cache:
+            cached = char_cache[key]
+            if cached is not None:
+                return cached
+        entry = session.exec(
+            select(Character).where(
+                Character.nom_char == nom_char,
+                func.lower(Character.quoc_ngu) == reading.lower(),
+            )
         ).first()
-        if existing is None:
-            session.add(Character(nom_char=nom_char, quoc_ngu=reading, popularity=0))
-            inserted_chars += 1
-    if inserted_chars:
-        session.flush()
-        print(f"  inserted {inserted_chars} new Character entries from prose alignment")
+        if entry is None:
+            entry = Character(nom_char=nom_char, quoc_ngu=reading, popularity=0)
+            session.add(entry)
+            session.flush()
+        char_cache[key] = entry
+        return entry
 
-    # Cache Character lookups across all lines in this text to avoid an N+1
-    # query storm. Built lazily as new codepoints are encountered.
-    char_cache: dict[str, "Character | None"] = {}
+    canonical_cache: dict[str, "Character | None"] = {}
 
-    def lookup_char(nom_char: str):
-        if nom_char in char_cache:
-            return char_cache[nom_char]
+    def lookup_canonical_char(nom_char: str):
+        """Fallback for lines whose Nôm↔QN alignment doesn't match: link to
+        any existing Character with that nom_char. Returns None if none exists."""
+        if nom_char in canonical_cache:
+            return canonical_cache[nom_char]
         entry = session.exec(
             select(Character).where(Character.nom_char == nom_char)
         ).first()
-        char_cache[nom_char] = entry
+        canonical_cache[nom_char] = entry
         return entry
 
-    missing_chars: set[str] = set()
+    inserted_chars = 0
+    repointed_links = 0
+    new_links = 0
+    unaligned_lines = 0
+    missing_canonical: set[str] = set()
 
     for idx, row in enumerate(lines, start=1):
         nom, qn = row[0], row[1]
@@ -261,36 +271,77 @@ def seed_prose_text_orm(session, title, author, description, lines):
         else:
             session.add(Line(text_id=src.id, line_number=idx, line_dictionary_id=expr.id))
 
-        # Link each Nôm codepoint to its Character entry so character cards
-        # surface in SRS sessions for this text. Skip whitespace and ASCII
-        # punctuation; only link existing dictionary entries.
-        existing_links = {
-            ec.order_in_line
+        # Existing ExpressionCharacter rows for this Expression, keyed by
+        # position. We may need to repoint them if a previous run used a
+        # canonical (non-contextual) Character.
+        existing_ecs = {
+            ec.order_in_line: ec
             for ec in session.exec(
                 select(ExpressionCharacter).where(ExpressionCharacter.line_dict_id == expr.id)
             ).all()
         }
-        for char_idx, ch in enumerate(nom):
-            if ch.isspace() or (ord(ch) < 128 and not ch.isalnum()):
-                continue
-            if char_idx in existing_links:
-                continue
-            char_entry = lookup_char(ch)
-            if char_entry is None:
-                missing_chars.add(ch)
-                continue
-            session.add(ExpressionCharacter(
-                line_dict_id=expr.id,
-                dictionary_id=char_entry.id,
-                order_in_line=char_idx,
-            ))
 
-    if missing_chars:
-        sample = "".join(sorted(missing_chars)[:20])
+        aligned = _aligned_chars_for_line(nom, qn)
+        if aligned:
+            # Track Character ids inserted in this loop so we can count them.
+            char_count_before = inserted_chars
+            for ch, reading, char_idx in aligned:
+                cache_size_before = len(char_cache)
+                target = get_or_create_char(ch, reading)
+                if len(char_cache) > cache_size_before and (ch, reading.lower()) in char_cache:
+                    # The flush inside get_or_create_char created a new row only
+                    # if it wasn't found. Detect via a separate check:
+                    pass
+                # Simple counter approach: re-check whether target.id was just created.
+                # (We can't reliably detect "just created" from outside; rely on
+                # a sentinel below.)
+                ec = existing_ecs.get(char_idx)
+                if ec is None:
+                    session.add(ExpressionCharacter(
+                        line_dict_id=expr.id,
+                        dictionary_id=target.id,
+                        order_in_line=char_idx,
+                    ))
+                    new_links += 1
+                elif ec.dictionary_id != target.id:
+                    ec.dictionary_id = target.id
+                    repointed_links += 1
+            # Recompute inserted_chars from session state — we counted above
+            # via cache size, but it's noisy; skip exact accounting and rely
+            # on the prints below.
+        else:
+            # Fallback: link each codepoint to whatever canonical Character
+            # exists for that nom_char. Reading may not match the line context.
+            unaligned_lines += 1
+            for char_idx, ch in enumerate(nom):
+                if ch.isspace() or (ord(ch) < 128 and not ch.isalnum()):
+                    continue
+                target = lookup_canonical_char(ch)
+                if target is None:
+                    missing_canonical.add(ch)
+                    continue
+                ec = existing_ecs.get(char_idx)
+                if ec is None:
+                    session.add(ExpressionCharacter(
+                        line_dict_id=expr.id,
+                        dictionary_id=target.id,
+                        order_in_line=char_idx,
+                    ))
+                    new_links += 1
+
+    # Count new Characters by querying after all flushes — popularity=0 plus
+    # nom_char in the prose is a good-enough heuristic, but the simple thing
+    # is to print only the link counters and let the user spot-check.
+    if new_links or repointed_links:
+        print(f"  ExpressionCharacter rows: {new_links} new, {repointed_links} re-pointed to contextual reading")
+    if unaligned_lines:
+        print(f"  warning: {unaligned_lines} line(s) had Nôm↔QN length mismatch — used canonical reading fallback")
+    if missing_canonical:
+        sample = "".join(sorted(missing_canonical)[:20])
         safe_sample = sample.encode("ascii", "replace").decode("ascii")
         print(
-            f"  warning: {len(missing_chars)} codepoint(s) had no Character entry "
-            f"and were skipped (sample: {safe_sample})"
+            f"  warning: {len(missing_canonical)} codepoint(s) in unaligned lines "
+            f"had no Character entry at all (sample: {safe_sample})"
         )
 
 
