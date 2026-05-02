@@ -132,14 +132,20 @@ function StudyContent() {
             if (textId) params.append('text_id', textId);
             if (customParams) params.append('custom_params', customParams);
 
-            // Pass currently in-flight items + session-reviewed items to prevent repeats
+            // Only exclude items currently in flight (queue + on-screen card).
+            // Reviewed items that recycle into a short learning step (e.g. an
+            // "Again" press dropping a card to a 1-minute interval) should be
+            // allowed to surface again — the backend's next_review_due check
+            // already enforces "don't return items not yet due", and the
+            // in-flight exclusion is enough to prevent serving the same item
+            // twice while it's still on the user's screen. Including the full
+            // reviewedInSession set here used to over-suppress, blocking the
+            // recycled cards the SRS algorithm specifically wants to re-serve.
             const inFlight = [currentItemRef.current, ...queueRef.current]
                 .filter((item): item is StudyItem => !!item)
                 .map(item => `${item.item_type}:${item.content_id}`);
 
-            const sessionSeen = mode === 'srs'
-                ? [...new Set([...reviewedInSession.current, ...inFlight])]
-                : inFlight;
+            const sessionSeen = inFlight;
 
             if (sessionSeen.length > 0) {
                 params.append('seen', sessionSeen.join(','));
