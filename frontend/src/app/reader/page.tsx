@@ -21,7 +21,7 @@ export default function ReaderPage() {
     useGuestOrAuthGuard();
     const router = useRouter();
     const t = useTranslations('reader');
-    const messages = useMessages() as { textDescriptions?: Record<string, string> };
+    const messages = useMessages() as { textDescriptions?: Record<string, string>; textTitles?: Record<string, string> };
     const [texts, setTexts] = useState<SourceText[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -82,7 +82,7 @@ export default function ReaderPage() {
                                     </span>
                                 </div>
                                 <h3 className="text-2xl font-serif text-text-primary mb-1 group-hover:text-accent-primary transition-colors duration-300">
-                                    {text.title}
+                                    {messages.textTitles?.[text.title] || text.title}
                                 </h3>
                                 <p className="text-xs text-text-secondary italic opacity-60 font-serif">
                                     {t('byAuthor', { author: text.author })}
