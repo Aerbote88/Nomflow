@@ -134,3 +134,85 @@ animal_list = [
     ("𤠅", "voi"), ("𤢇", "voi"), ("𬸼", "nai"), ("𪅥", "vạc"), ("𪅫", "vạc"), ("𪀄", "chim"), ("𩵜", "cá"), ("𩵜", "cá"), 
     ("𦦳", "hổ"), ("𪅑", "quạ")
 ]
+
+# Kinh Tin Kính (Apostles' Creed) from Borg.tonch.18, an 18th-century
+# Vietnamese Catholic catechism. Each tuple is (Nôm, Quốc ngữ, English) for one
+# sentence-level segment. Source files:
+#   borg-tonch-18-nom.txt:256, split on 。
+#   borg-tonch-18-qn.txt:291, split on ". " (footnote markers stripped)
+# English follows the segmentation of the Vietnamese text (which splits the
+# standard creed phrase "the holy Catholic Church" across three lines because
+# the transliteration "San-ta / Y-ghê-rê-gia / Ca-tô-li-ca" sits on three lines).
+borg_tonch_18_kinh_tin_kinh = [
+    ("碎信敬姚吒咍論丕", "Tôi tin kính Deu Cha hay trọn vậy", "I believe in God the Father almighty"),
+    ("孕𢧚𡗶坦", "dựng nên Trời Đất", "creator of Heaven and Earth"),
+    ("碎信敬沒昆姚吒", "Tôi tin kính một Con Deu Cha", "I believe in the one Son of God the Father"),
+    ("支秋基移吹蘇", "Giê-su Khi-rê-xi-tô", "Jesus Christ"),
+    ("主眾碎", "Chúa chúng tôi", "our Lord"),
+    ("碎信固法丕𠫾蘇山蘇", "Tôi tin có phép Phi-ri-tô San-tô", "I believe by the power of the Holy Spirit"),
+    ("聖瑪𠫾亞召胎", "thánh Ma-ri-a chịu thai", "the holy Mary conceived"),
+    ("麻生𦝉童貞", "mà sinh đẻ đồng trinh", "and gave birth as a virgin"),
+    ("碎信所召難", "Tôi tin thửa chịu nạn", "I believe that he suffered"),
+    ("蒸時官", "chưng thì quan", "in the time of the official"),
+    ("封尸烏丕羅蘇", "Phong-thi-ô Phi-la-tô", "Pontius Pilate"),
+    ("棟釘閣抅椊", "đóng đinh gác Câu-rút", "was nailed to the Cross"),
+    ("折麻卞垃", "chết mà bèn lấp", "died and was buried"),
+    ("碎信所𠖈地獄", "Tôi tin thửa xuống Địa ngục", "I believe that he descended into Hell"),
+    ("㝵次𠀧", "Ngày thứ ba", "on the third day"),
+    ("𪽝中几折吏𤯩", "Bởi trong kẻ chết lại sống", "he rose again from among the dead"),
+    ("碎信所蓮𡗶", "Tôi tin thửa lên Trời", "I believe that he ascended into Heaven"),
+    ("御边右姚吒咍論丕", "ngự bên hữu Deu Cha hay trọn vậy", "and is seated at the right hand of God the Father almighty"),
+    ("碎信所㝵婁", "Tôi tin thửa ngày sau", "I believe that on the last day"),
+    ("𪽝𡗶吏𠖈", "bởi Trời lại xuống", "he will come down again from Heaven"),
+    ("判察几𤯩喡几折", "phán xét kẻ sống và kẻ chết", "to judge the living and the dead"),
+    ("碎信丕𠫾蘇山蘇", "Tôi tin Phi-ri-tô San-tô", "I believe in the Holy Spirit"),
+    ("碎信固山些", "Tôi tin có San-ta", "I believe in the holy"),
+    ("依計移加", "Y-ghê-rê-gia", "Church"),
+    ("𬞢蘇離𬞢", "Ca-tô-li-ca", "Catholic"),
+    ("各聖共通功", "các thánh cùng thông công", "the communion of saints"),
+    ("碎信蒸赦罪", "Tôi tin chưng tha tội", "I believe in the forgiveness of sins"),
+    ("碎信蒸類𠊚吏𤯩", "Tôi tin chưng loài người lại sống", "I believe in the resurrection of mankind"),
+    ("碎信恒𤯩丕", "Tôi tin hằng sống vậy", "I believe in life everlasting"),
+    ("亞綿", "A-men", "Amen"),
+]
+
+# Kinh Thiên Chúa (Lord's Prayer / Pater Noster) from Borg.tonch.18.
+# Source: borg-tonch-18-nom.txt:248 / borg-tonch-18-qn.txt:283 (single line each).
+borg_tonch_18_kinh_thien_chua = [
+    ("眾碎𥛉恩天地真主", "Chúng tôi lạy ơn Thiên Địa Chân Chúa", "We worship the True Lord of Heaven and Earth"),
+    ("於𨕭𡗶羅吒眾碎", "ở trên Trời là Cha chúng tôi", "who is in Heaven, our Father"),
+    ("眾碎願", "Chúng tôi nguyện", "We pray"),
+    ("名吒奇創", "danh Cha cả sáng", "hallowed be your name"),
+    ("國吒治旦", "quốc Cha trị đến", "your kingdom come"),
+    ("𠳐𧘇吒𠁑坦", "vâng ý Cha dưới đất", "your will be done on earth"),
+    ("平𨕭𡗶丕", "bằng trên Trời vậy", "as it is in Heaven"),
+    ("眾碎吀吒", "Chúng tôi xin Cha", "We ask of you, Father"),
+    ("𣈙朱眾碎", "rầy cho chúng tôi", "give us"),
+    ("恒㝵用堵", "hằng ngày dùng đủ", "our daily bread"),
+    ("麻赦女眾碎", "mà tha nợ chúng tôi", "and forgive us our debts"),
+    ("平眾碎拱赦", "bằng chúng tôi cũng tha", "as we also forgive"),
+    ("几固女眾碎丕", "kẻ có nợ chúng tôi vậy", "those who are indebted to us"),
+    ("吀渚底眾碎", "xin chớ để chúng tôi", "and let us not"),
+    ("沙蒸感𠴗", "sa chưng cám dỗ", "fall into temptation"),
+    ("卞助眾碎", "bèn chữa chúng tôi", "but deliver us"),
+    ("蒸事与", "chưng sự dữ", "from evil"),
+    ("亞綿", "A-men", "Amen"),
+]
+
+# Kinh A-ve (Hail Mary / Ave Maria) from Borg.tonch.18.
+# Source: borg-tonch-18-nom.txt:252 / borg-tonch-18-qn.txt:287 (single line each
+# after the [18r] page break; the prayer body itself is contiguous).
+borg_tonch_18_kinh_ave = [
+    ("亞蟡瑪𠫾亞", "A-ve Ma-ri-a", "Hail Mary"),
+    ("苔𬞢囉沙", "đầy Ga-ra-sa", "full of grace"),
+    ("主姚 於共妑", "Chúa Deu ở cùng bà", "the Lord is with thee"),
+    ("女中妑固福邏", "nữ trung bà có phúc lạ", "blessed art thou among women"),
+    ("妑胎子支秋", "bà thai tử Giê-su", "the fruit of thy womb, Jesus"),
+    ("歉福邏", "gồm phúc lạ", "is also blessed"),
+    ("山些瑪𠫾亞", "San-ta Ma-ri-a", "Holy Mary"),
+    ("德媄主姚", "Đức Mẹ Chúa Deu", "Mother of God"),
+    ("求朱眾碎", "cầu cho chúng tôi", "pray for us"),
+    ("几固罪欺𠉞", "kẻ có tội khi nay", "sinners, now"),
+    ("及臣等死候", "cập thần đẳng tử hầu", "and at the hour of our death"),
+    ("亞綿", "A-men", "Amen"),
+]
