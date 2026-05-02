@@ -33,7 +33,7 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, colorClass = '
 
     return (
         <div className={`glass-card flex flex-col items-center justify-center p-4 md:p-6 flex-1 min-w-[120px] ${className}`}>
-            <span className="text-[0.6rem] md:text-sm text-text-secondary uppercase tracking-widest text-center truncate w-full mb-1">
+            <span className="text-[0.6rem] md:text-sm text-text-secondary uppercase tracking-widest text-center w-full mb-1 leading-tight break-words">
                 {label}
             </span>
             <div className="flex items-center gap-1 md:gap-2">

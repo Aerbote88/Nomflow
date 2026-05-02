@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { GlassCard, Button, Portal } from '@/components/ui';
 
@@ -12,6 +13,8 @@ interface FeedbackModalProps {
 type FeedbackType = 'bug' | 'suggestion' | 'other';
 
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
+    const t = useTranslations('feedback');
+    const tc = useTranslations('common');
     const [type, setType] = useState<FeedbackType>('bug');
     const [message, setMessage] = useState('');
     const [status, setStatus] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle');
@@ -40,9 +43,9 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     };
 
     const types: { value: FeedbackType; label: string; icon: string }[] = [
-        { value: 'bug', label: 'Bug Report', icon: '🐛' },
-        { value: 'suggestion', label: 'Suggestion', icon: '💡' },
-        { value: 'other', label: 'Other', icon: '💬' },
+        { value: 'bug', label: t('bug'), icon: '🐛' },
+        { value: 'suggestion', label: t('suggestion'), icon: '💡' },
+        { value: 'other', label: t('other'), icon: '💬' },
     ];
 
     return (
@@ -57,63 +60,63 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
-                        <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-1">Feedback</div>
-                        <h2 className="text-2xl font-display font-bold text-text-primary">Send Feedback</h2>
-                        <p className="text-xs text-text-secondary mt-1">Help me improve NômFlow</p>
+                        <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-1">{t('kicker')}</div>
+                        <h2 className="text-2xl font-display font-bold text-text-primary">{t('title')}</h2>
+                        <p className="text-xs text-text-secondary mt-1">{t('subtitle')}</p>
                     </div>
 
                     {status === 'done' ? (
                         <div className="px-8 py-12 text-center">
                             <div className="text-4xl mb-4">🙏</div>
-                            <p className="text-text-primary font-bold mb-1">Thank you!</p>
-                            <p className="text-text-secondary text-sm">Your feedback has been received.</p>
-                            <Button className="mt-8 w-full" onClick={handleClose}>Close</Button>
+                            <p className="text-text-primary font-bold mb-1">{t('thanksTitle')}</p>
+                            <p className="text-text-secondary text-sm">{t('thanksBody')}</p>
+                            <Button className="mt-8 w-full" onClick={handleClose}>{tc('close')}</Button>
                         </div>
                     ) : (
                         <div className="px-8 py-6 space-y-5">
                             <div>
-                                <label className="block text-xs font-black uppercase tracking-[0.3em] text-text-secondary/70 mb-3">Type</label>
+                                <label className="block text-xs font-black uppercase tracking-[0.3em] text-text-secondary/70 mb-3">{t('type')}</label>
                                 <div className="grid grid-cols-3 gap-2">
-                                    {types.map(t => (
+                                    {types.map(opt => (
                                         <button
-                                            key={t.value}
-                                            onClick={() => setType(t.value)}
+                                            key={opt.value}
+                                            onClick={() => setType(opt.value)}
                                             className={`py-3 px-2 rounded-xl border transition-all text-center ${
-                                                type === t.value
+                                                type === opt.value
                                                     ? 'bg-accent-primary/10 border-accent-primary/50 text-accent-primary'
                                                     : 'bg-white/3 border-white/5 text-text-secondary hover:border-white/20 hover:text-text-primary'
                                             }`}
                                         >
-                                            <div className="text-lg mb-1">{t.icon}</div>
-                                            <div className="font-black text-[10px] uppercase tracking-widest">{t.label}</div>
+                                            <div className="text-lg mb-1">{opt.icon}</div>
+                                            <div className="font-black text-[10px] uppercase tracking-widest">{opt.label}</div>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black uppercase tracking-[0.3em] text-text-secondary/70 mb-3">Message</label>
+                                <label className="block text-xs font-black uppercase tracking-[0.3em] text-text-secondary/70 mb-3">{t('message')}</label>
                                 <textarea
                                     value={message}
                                     onChange={e => setMessage(e.target.value)}
-                                    placeholder="Describe the issue or share your thoughts..."
+                                    placeholder={t('messagePlaceholder')}
                                     rows={5}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-text-primary text-sm outline-none focus:border-accent-primary/50 resize-none placeholder:text-text-secondary/30"
                                 />
                             </div>
 
                             {status === 'error' && (
-                                <p className="text-red-400 text-xs font-bold uppercase tracking-widest text-center">Something went wrong. Please try again.</p>
+                                <p className="text-red-400 text-xs font-bold uppercase tracking-widest text-center">{t('errorSubmit')}</p>
                             )}
 
                             <div className="flex gap-3 pt-1">
-                                <Button variant="ghost" className="flex-1" onClick={handleClose}>Cancel</Button>
+                                <Button variant="ghost" className="flex-1" onClick={handleClose}>{tc('cancel')}</Button>
                                 <Button
                                     className="flex-1"
                                     onClick={handleSubmit}
                                     disabled={!message.trim() || status === 'submitting'}
                                 >
-                                    {status === 'submitting' ? 'Sending...' : 'Send Feedback'}
+                                    {status === 'submitting' ? t('sending') : t('send')}
                                 </Button>
                             </div>
                         </div>

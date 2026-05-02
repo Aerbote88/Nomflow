@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { WritingSession } from '@/components/WritingPractice/WritingSession';
 import { useGuestOrAuthGuard } from '@/hooks/useGuestOrAuthGuard';
@@ -47,19 +48,18 @@ function writeCache(seq: TextCharacterSequence): void {
     try {
         sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(seq));
     } catch {
-        // Quota exceeded or other storage errors — ignore.
+        // ignore
     }
 }
 
 export default function WritingPracticePage() {
     useGuestOrAuthGuard();
+    const t = useTranslations('writing');
     const [entries, setEntries] = useState<WritingEntry[] | null>(null);
     const [title, setTitle] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Kick off hanzi-writer import immediately so it's ready by the time
-        // the first character mounts instead of starting on-demand.
         import('hanzi-writer').catch(() => {});
 
         let cancelled = false;
@@ -79,7 +79,7 @@ export default function WritingPracticePage() {
                 if (cancelled) return;
                 const kieu = texts.find(isKieu);
                 if (!kieu) {
-                    setError('Truyện Kiều not found in available texts.');
+                    setError(t('kieuMissing'));
                     return;
                 }
                 const seq = await apiFetch<TextCharacterSequence>(
@@ -98,13 +98,13 @@ export default function WritingPracticePage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [t]);
 
     if (error) {
         return <p className="text-red-400 text-center">{error}</p>;
     }
     if (entries === null) {
-        return <p className="text-text-secondary text-center">Loading…</p>;
+        return <p className="text-text-secondary text-center">{t('loading')}</p>;
     }
 
     return (

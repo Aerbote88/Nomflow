@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui';
 import { CharacterWriter } from './CharacterWriter';
 import { loadCharacter } from '@/lib/strokeData';
@@ -41,6 +42,7 @@ function LineWithHighlight({ line, target }: { line: string; target: string }) {
 }
 
 export function WritingSession({ entries, title }: Props) {
+    const t = useTranslations('writingSession');
     const [index, setIndex] = useState(0);
     const advanceTimerRef = useRef<number | null>(null);
 
@@ -55,8 +57,6 @@ export function WritingSession({ entries, title }: Props) {
         return () => clearTimer();
     }, []);
 
-    // Prefetch stroke data for the characters immediately around the current
-    // index so navigating forward/back is instant once the user gets rolling.
     useEffect(() => {
         if (entries.length === 0) return;
         const windowSize = 5;
@@ -88,7 +88,7 @@ export function WritingSession({ entries, title }: Props) {
     if (!entries || entries.length === 0) {
         return (
             <div className="glass-card text-center py-12">
-                <p className="text-text-secondary">No characters to practice in this text.</p>
+                <p className="text-text-secondary">{t('empty')}</p>
             </div>
         );
     }
@@ -99,13 +99,13 @@ export function WritingSession({ entries, title }: Props) {
         <div className="flex flex-col items-center gap-3 sm:gap-6">
             <div className="text-center">
                 <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.25em] sm:tracking-[0.3em] text-accent-primary/80">
-                    Unique characters in
+                    {t('uniqueIn')}
                 </div>
                 <h2 className="text-lg sm:text-xl font-display font-bold text-text-primary mt-0.5 sm:mt-1">
                     {title}
                 </h2>
                 <p className="text-text-secondary text-xs sm:text-sm mt-1 sm:mt-2">
-                    Character {index + 1} of {entries.length}
+                    {t('characterOf', { current: index + 1, total: entries.length })}
                 </p>
             </div>
 
@@ -117,7 +117,7 @@ export function WritingSession({ entries, title }: Props) {
 
             <div className="glass-card w-full max-w-xl text-center px-3 py-2 sm:px-4 sm:py-3">
                 <div className="text-[9px] uppercase tracking-widest text-text-secondary mb-1">
-                    Line {current.line_number}
+                    {t('lineLabel', { number: current.line_number })}
                 </div>
                 <LineWithHighlight line={current.line_nom} target={current.character} />
                 <div className="text-text-secondary italic mt-1 text-xs">
@@ -127,7 +127,7 @@ export function WritingSession({ entries, title }: Props) {
 
             <div className="flex gap-3 sm:gap-6 items-center">
                 <Button variant="ghost" size="sm" onClick={prev} disabled={index === 0}>
-                    ← Prev
+                    {t('prev')}
                 </Button>
                 <Button
                     variant="ghost"
@@ -135,7 +135,7 @@ export function WritingSession({ entries, title }: Props) {
                     onClick={next}
                     disabled={index === entries.length - 1}
                 >
-                    Next →
+                    {t('next')}
                 </Button>
             </div>
         </div>

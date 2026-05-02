@@ -4,11 +4,14 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui';
+import { LanguageToggle } from './LanguageToggle';
 
 export function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
+    const t = useTranslations('nav');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isGuest, setIsGuest] = useState(false);
@@ -22,7 +25,6 @@ export function Navbar() {
         setCurrentUser(username);
     }, [pathname]);
 
-    // Close menu when route changes
     useEffect(() => {
         setIsMenuOpen(false);
     }, [pathname]);
@@ -44,18 +46,18 @@ export function Navbar() {
     if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password') return null;
 
     const navLinks = [
-        { href: '/dashboard', label: 'Dashboard' },
-        { href: '/library', label: 'Library' },
-        { href: '/reader', label: 'Reader' },
-        { href: '/writing-practice', label: 'Writing' },
-        { href: '/leaderboard', label: 'Leaderboard' },
-        { href: '/settings', label: 'Settings' },
+        { href: '/dashboard', label: t('dashboard') },
+        { href: '/library', label: t('library') },
+        { href: '/reader', label: t('reader') },
+        { href: '/writing-practice', label: t('writing') },
+        { href: '/leaderboard', label: t('leaderboard') },
+        { href: '/settings', label: t('settings') },
     ];
 
     const guestNavLinks = [
-        { href: '/writing-practice', label: 'Writing' },
-        { href: '/reader', label: 'Reader' },
-        { href: '/flashcards', label: 'Flashcards' },
+        { href: '/writing-practice', label: t('writing') },
+        { href: '/reader', label: t('reader') },
+        { href: '/flashcards', label: t('flashcards') },
     ];
 
     return (
@@ -72,12 +74,11 @@ export function Navbar() {
                     />
                     <div className="flex flex-col">
                         <span className="text-xl font-display font-bold tracking-tight text-text-primary">NômFlow</span>
-                        <span className="text-[8px] font-display font-bold uppercase tracking-[0.4em] text-accent-primary opacity-60">Script, Simplified</span>
+                        <span className="text-[8px] font-display font-bold uppercase tracking-[0.4em] text-accent-primary opacity-60">{t('tagline')}</span>
                     </div>
                 </Link>
 
-                {/* Hamburger Toggle */}
-                <button 
+                <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                     className="md:hidden p-2 text-text-secondary hover:text-accent-primary transition-colors"
                 >
@@ -92,7 +93,6 @@ export function Navbar() {
                     )}
                 </button>
 
-                {/* Desktop Links */}
                 <div className="hidden md:flex items-center gap-8">
                     {isLoggedIn ? (
                         <>
@@ -110,13 +110,14 @@ export function Navbar() {
                                     {currentUser}
                                 </span>
                             )}
+                            <LanguageToggle />
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleLogout}
                                 className="text-[11px] font-black text-red-500/60 hover:text-red-500 hover:bg-red-500/10 uppercase tracking-[0.2em]"
                             >
-                                Sign Out
+                                {t('signOut')}
                             </Button>
                         </>
                     ) : isGuest ? (
@@ -130,24 +131,27 @@ export function Navbar() {
                                     {link.label}
                                 </Link>
                             ))}
+                            <LanguageToggle />
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleExitDemo}
                                 className="text-[11px] font-black text-text-secondary/60 hover:text-text-secondary uppercase tracking-[0.2em]"
                             >
-                                Exit Demo
+                                {t('exitDemo')}
                             </Button>
                         </>
                     ) : (
-                        <Link href="/login" className="text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors">
-                            Sign In
-                        </Link>
+                        <>
+                            <LanguageToggle />
+                            <Link href="/login" className="text-[11px] font-black uppercase tracking-widest text-text-secondary hover:text-accent-primary transition-colors">
+                                {t('signIn')}
+                            </Link>
+                        </>
                     )}
                 </div>
             </div>
 
-            {/* Mobile Menu */}
             {isMenuOpen && (
                 <div className="md:hidden absolute top-full left-0 w-full mt-2 glass-card !p-4 border-accent-gold/20 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
                     {isLoggedIn ? (
@@ -164,17 +168,20 @@ export function Navbar() {
                             <div className="flex justify-between items-center pt-2">
                                 {currentUser && (
                                     <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-50">
-                                        Hi, {currentUser}
+                                        {t('hi', { name: currentUser })}
                                     </span>
                                 )}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleLogout}
-                                    className="text-[10px] font-black text-red-500/60 hover:text-red-500 uppercase tracking-widest"
-                                >
-                                    Sign Out
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    <LanguageToggle />
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleLogout}
+                                        className="text-[10px] font-black text-red-500/60 hover:text-red-500 uppercase tracking-widest"
+                                    >
+                                        {t('signOut')}
+                                    </Button>
+                                </div>
                             </div>
                         </>
                     ) : isGuest ? (
@@ -188,21 +195,25 @@ export function Navbar() {
                                     {link.label}
                                 </Link>
                             ))}
-                            <div className="flex justify-end items-center pt-2">
+                            <div className="flex justify-end items-center gap-3 pt-2">
+                                <LanguageToggle />
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={handleExitDemo}
                                     className="text-[10px] font-black text-text-secondary/60 uppercase tracking-widest"
                                 >
-                                    Exit Demo
+                                    {t('exitDemo')}
                                 </Button>
                             </div>
                         </>
                     ) : (
-                        <Link href="/login" className="text-sm font-black uppercase tracking-[0.2em] text-text-secondary py-2">
-                            Sign In
-                        </Link>
+                        <div className="flex justify-between items-center">
+                            <Link href="/login" className="text-sm font-black uppercase tracking-[0.2em] text-text-secondary py-2">
+                                {t('signIn')}
+                            </Link>
+                            <LanguageToggle />
+                        </div>
                     )}
                 </div>
             )}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { StudyHeader } from '@/components/Study/StudyHeader';
@@ -32,6 +33,8 @@ interface StudyItem {
 
 function StudyContent() {
     useGuestOrAuthGuard();
+    const t = useTranslations('study');
+    const th = useTranslations('study.header');
     const searchParams = useSearchParams();
     const [queue, setQueue] = useState<StudyItem[]>([]);
     const [currentItem, setCurrentItem] = useState<StudyItem | null>(null);
@@ -50,6 +53,7 @@ function StudyContent() {
     const [lastReviewedQuality, setLastReviewedQuality] = useState<number | null>(null);
     const isProcessingNext = useRef(false);
     const reviewedInSession = useRef<Set<string>>(new Set());
+    const [reviewedVersion, setReviewedVersion] = useState(0);
     const noMoreRemaining = useRef(false);
     const activeSubmissionsRef = useRef(0);
 
@@ -213,11 +217,12 @@ function StudyContent() {
                 queue,
                 currentItem,
                 stats,
+                reviewed: Array.from(reviewedInSession.current),
                 timestamp: Date.now()
             };
             localStorage.setItem(sessionKey, JSON.stringify(sessionState));
         }
-    }, [queue, currentItem, stats, sessionKey, mode]);
+    }, [queue, currentItem, stats, sessionKey, mode, reviewedVersion]);
 
     // Restore session state from localStorage on mount (SRS only)
     useEffect(() => {
@@ -248,6 +253,9 @@ function StudyContent() {
                     queueRef.current = restoredQueue;
                     setCurrentItem(restoredCurrent);
                     currentItemRef.current = restoredCurrent;
+                    if (Array.isArray(sessionState.reviewed)) {
+                        reviewedInSession.current = new Set(sessionState.reviewed);
+                    }
                     setStats({ due: 0, studied: sessionState.stats?.studied || 0 });
                     // Fetch fresh due count — don't trust stale localStorage value
                     const statsParams = new URLSearchParams();
@@ -274,6 +282,25 @@ function StudyContent() {
         // If no valid saved session, fetch new items
         fetchItems();
     }, [sessionKey, fetchItems, mode, currentUser]);
+
+    // Cross-tab sync: merge reviewed items written by sibling tabs into our local set
+    // so the next prefetch's `seen` filter excludes anything the other tab has reviewed.
+    useEffect(() => {
+        if (currentUser === null || isGuest || mode === 'random') return;
+        const onStorage = (e: StorageEvent) => {
+            if (e.key !== sessionKey || !e.newValue) return;
+            try {
+                const next = JSON.parse(e.newValue);
+                if (Array.isArray(next.reviewed)) {
+                    const merged = new Set(reviewedInSession.current);
+                    for (const id of next.reviewed) merged.add(id);
+                    reviewedInSession.current = merged;
+                }
+            } catch { /* ignore */ }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, [sessionKey, currentUser, isGuest, mode]);
 
 
     useEffect(() => {
@@ -333,7 +360,8 @@ function StudyContent() {
         setLastReviewedItem(reviewedItem);
         setLastReviewedQuality(quality);
         reviewedInSession.current.add(`${reviewedItem.item_type}:${reviewedItem.content_id}`);
-        
+        setReviewedVersion(v => v + 1);
+
         if (mode === 'random' && quality < 2) {
             // Re-queue wrong answer in random mode
             setQueue(prev => [...prev, reviewedItem]);
@@ -409,15 +437,15 @@ function StudyContent() {
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="flex flex-col items-center">
                     <div className="w-16 h-16 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin mb-4" />
-                    <p className="text-text-secondary font-black uppercase tracking-widest text-xs">Loading study items...</p>
+                    <p className="text-text-secondary font-black uppercase tracking-widest text-xs">{t('loadingItems')}</p>
                 </div>
             </div>
         );
     }
 
     const progressText = mode === 'srs'
-        ? (completed ? "Review session complete" : `Due: ${stats.due}`)
-        : (completed ? "Practice session complete" : `Remaining: ${queue.length + 1}`);
+        ? (completed ? th('reviewComplete') : th('due', { count: stats.due }))
+        : (completed ? th('practiceComplete') : th('remaining', { count: queue.length + 1 }));
 
     const handleNomClick = () => {
         if (!currentItem) return;
@@ -477,13 +505,13 @@ function StudyContent() {
                                         disabled={!canUndo}
                                         className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:border-white/10 disabled:hover:text-text-secondary"
                                     >
-                                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">↶ Undo</span>
+                                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">{t('undo')}</span>
                                     </button>
                                     <button
                                         onClick={() => setIsAddToListOpen(true)}
                                         className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-accent-primary/30 text-text-secondary hover:text-accent-primary transition-all"
                                     >
-                                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">+ Add to List</span>
+                                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest">{t('addToList')}</span>
                                     </button>
                                 </div>
                             )}
@@ -497,12 +525,12 @@ function StudyContent() {
 
                 {!completed && !isGuest && (
                     <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
-                        Your Progress is Automatically Saved
+                        {t('progressSavedAuto')}
                     </div>
                 )}
                 {!completed && isGuest && (
                     <div className="mt-8 text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black opacity-30">
-                        Demo Mode — Progress Not Saved
+                        {t('demoMode')}
                     </div>
                 )}
             </main>

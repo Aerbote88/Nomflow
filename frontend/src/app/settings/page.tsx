@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button, Portal } from '@/components/ui';
@@ -29,6 +30,8 @@ interface StudyList {
 }
 
 export default function SettingsPage() {
+    const t = useTranslations('settings');
+    const tc = useTranslations('common');
     const [user, setUser] = useState<User | null>(null);
     const [settings, setSettings] = useState<Settings | null>(null);
     const [texts, setTexts] = useState<SourceText[]>([]);
@@ -78,7 +81,7 @@ export default function SettingsPage() {
                 }
             } catch (err) {
                 logger.error('Failed to load settings:', err);
-                setError('Failed to load settings data.');
+                setError(t('loadFailed'));
             } finally {
                 setLoading(false);
             }
@@ -107,9 +110,9 @@ export default function SettingsPage() {
                 body: JSON.stringify({ email: email || null, hide_from_leaderboard: hideFromLeaderboard })
             });
             if (user) setUser({ ...user, email: email || null });
-            showMessage('success', 'Profile updated!');
+            showMessage('success', t('msgProfileUpdated'));
         } catch (err: any) {
-            showMessage('error', err.message || 'Failed to update profile.');
+            showMessage('error', err.message || t('msgProfileFailed'));
         }
     };
 
@@ -123,15 +126,15 @@ export default function SettingsPage() {
                     active_list_id: sourceType === 'list' ? activeListId : null
                 })
             });
-            showMessage('success', 'Study settings saved!');
+            showMessage('success', t('msgStudySaved'));
         } catch (err) {
-            showMessage('error', 'Failed to save study settings.');
+            showMessage('error', t('msgStudyFailed'));
         }
     };
 
     const handleChangePassword = async () => {
         if (!oldPassword || !newPassword) {
-            showMessage('error', 'Please fill in both password fields.');
+            showMessage('error', t('msgPasswordsRequired'));
             return;
         }
 
@@ -140,11 +143,11 @@ export default function SettingsPage() {
                 method: 'POST',
                 body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
             });
-            showMessage('success', 'Password changed successfully!');
+            showMessage('success', t('msgPasswordChanged'));
             setOldPassword('');
             setNewPassword('');
         } catch (err: any) {
-            showMessage('error', err.message || 'Failed to change password.');
+            showMessage('error', err.message || t('msgPasswordFailed'));
         }
     };
 
@@ -153,7 +156,7 @@ export default function SettingsPage() {
             await apiFetch('settings/reset', { method: 'POST' });
             window.location.reload();
         } catch (err) {
-            showMessage('error', 'Failed to reset progress.');
+            showMessage('error', t('msgResetFailed'));
             setResetModalOpen(false);
         }
     };
@@ -165,7 +168,7 @@ export default function SettingsPage() {
             await apiFetch('user', { method: 'DELETE' });
             window.location.href = '/register';
         } catch (err) {
-            showMessage('error', 'Failed to delete account.');
+            showMessage('error', t('msgDeleteFailed'));
             setDeleteModalOpen(false);
         }
     };
@@ -182,7 +185,7 @@ export default function SettingsPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <p className="text-text-secondary mb-6">{error}</p>
-                <Button onClick={() => window.location.reload()}>Retry</Button>
+                <Button onClick={() => window.location.reload()}>{tc('retry')}</Button>
             </div>
         );
     }
@@ -190,7 +193,7 @@ export default function SettingsPage() {
     return (
         <div className="flex flex-col items-center py-4 md:py-8 px-4 max-w-2xl mx-auto fade-in-stable">
             <header className="text-center mb-6 md:mb-12">
-                <h1 className="text-2xl md:text-4xl font-bold font-display text-text-primary mb-0">Settings</h1>
+                <h1 className="text-2xl md:text-4xl font-bold font-display text-text-primary mb-0">{t('title')}</h1>
             </header>
 
             {saveStatus && (
@@ -203,20 +206,20 @@ export default function SettingsPage() {
             <div className="w-full space-y-8">
                 {/* Profile Section */}
                 <GlassCard>
-                    <h3 className="text-xl font-bold text-accent-primary font-display mb-2 uppercase tracking-tight">Public Profile</h3>
-                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">Manage your account and leaderboard visibility.</p>
+                    <h3 className="text-xl font-bold text-accent-primary font-display mb-2 uppercase tracking-tight">{t('profileTitle')}</h3>
+                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">{t('profileDesc')}</p>
 
                     <div className="space-y-4">
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">
-                                Email <span className="text-text-secondary/40 normal-case font-normal tracking-normal text-xs">(used for password reset)</span>
+                                {t('emailLabel')} <span className="text-text-secondary/40 normal-case font-normal tracking-normal text-xs">{t('emailHint')}</span>
                             </label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full bg-white/10 border-2 border-white/20 rounded-xl px-4 py-3 text-text-primary focus:border-accent-primary outline-none transition-colors"
-                                placeholder="you@example.com"
+                                placeholder={t('emailPlaceholder')}
                             />
                         </div>
                         <button
@@ -225,75 +228,75 @@ export default function SettingsPage() {
                             className="w-full flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-accent-primary/30 transition-all group"
                         >
                             <div className="text-left">
-                                <div className="text-sm font-bold text-text-primary group-hover:text-accent-primary transition-colors">Hide from Leaderboards</div>
-                                <div className="text-[10px] text-text-secondary/50 uppercase font-black tracking-widest mt-0.5">Your name won't appear in any rankings</div>
+                                <div className="text-sm font-bold text-text-primary group-hover:text-accent-primary transition-colors">{t('hideLeaderboard')}</div>
+                                <div className="text-[10px] text-text-secondary/50 uppercase font-black tracking-widest mt-0.5">{t('hideLeaderboardDesc')}</div>
                             </div>
                             <div className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-4 relative ${hideFromLeaderboard ? 'bg-accent-primary' : 'bg-white/10'}`}>
                                 <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${hideFromLeaderboard ? 'translate-x-5' : 'translate-x-0'}`} />
                             </div>
                         </button>
-                        <Button className="w-full" onClick={handleSaveProfile}>Save Profile</Button>
+                        <Button className="w-full" onClick={handleSaveProfile}>{t('saveProfile')}</Button>
                     </div>
                 </GlassCard>
 
                 {/* Study Config Section */}
                 <GlassCard>
-                    <h3 className="text-xl font-bold text-accent-primary font-display mb-2 uppercase tracking-tight">Study Configuration</h3>
-                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">Choose your current focus area.</p>
+                    <h3 className="text-xl font-bold text-accent-primary font-display mb-2 uppercase tracking-tight">{t('studyConfigTitle')}</h3>
+                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">{t('studyConfigDesc')}</p>
 
                     <div className="space-y-6">
                         <div className="flex gap-4">
                             <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors duration-200
                                 ${sourceType === 'text' ? 'bg-accent-primary/10 border-accent-primary text-accent-primary' : 'bg-white/5 border-transparent text-text-secondary hover:bg-white/10'}`}>
                                 <input type="radio" className="hidden" name="source" checked={sourceType === 'text'} onChange={() => setSourceType('text')} />
-                                <span className="font-bold uppercase tracking-widest text-[10px]">Text / Book</span>
+                                <span className="font-bold uppercase tracking-widest text-[10px]">{t('textOrBook')}</span>
                             </label>
                             <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-colors duration-200
                                 ${sourceType === 'list' ? 'bg-accent-primary/10 border-accent-primary text-accent-primary' : 'bg-white/5 border-transparent text-text-secondary hover:bg-white/10'}`}>
                                 <input type="radio" className="hidden" name="source" checked={sourceType === 'list'} onChange={() => setSourceType('list')} />
-                                <span className="font-bold uppercase tracking-widest text-[10px]">Custom List</span>
+                                <span className="font-bold uppercase tracking-widest text-[10px]">{t('customList')}</span>
                             </label>
                         </div>
 
                         {sourceType === 'text' ? (
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">Active Text</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">{t('activeText')}</label>
                                 <select
                                     value={activeTextId || ''}
                                     onChange={(e) => setActiveTextId(Number(e.target.value))}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-accent-primary/50 outline-none transition-colors appearance-none"
                                 >
-                                    <option value="" disabled className="bg-bg-primary">Select a text...</option>
-                                    {texts.map(t => <option key={t.id} value={t.id} className="bg-bg-primary">{t.title}</option>)}
+                                    <option value="" disabled className="bg-bg-primary">{t('selectText')}</option>
+                                    {texts.map(tx => <option key={tx.id} value={tx.id} className="bg-bg-primary">{tx.title}</option>)}
                                 </select>
                             </div>
                         ) : (
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">Active List</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">{t('activeList')}</label>
                                 <select
                                     value={activeListId || ''}
                                     onChange={(e) => setActiveListId(Number(e.target.value))}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-text-primary focus:border-accent-primary/50 outline-none transition-colors appearance-none"
                                 >
-                                    <option value="" disabled className="bg-bg-primary">Select a list...</option>
+                                    <option value="" disabled className="bg-bg-primary">{t('selectList')}</option>
                                     {lists.map(l => <option key={l.id} value={l.id} className="bg-bg-primary">{l.name}</option>)}
                                 </select>
                             </div>
                         )}
 
-                        <Button className="w-full" onClick={handleSaveStudyConfig}>Save Study Configuration</Button>
+                        <Button className="w-full" onClick={handleSaveStudyConfig}>{t('saveStudyConfig')}</Button>
                     </div>
                 </GlassCard>
 
                 {/* Security Section */}
                 <GlassCard>
-                    <h3 className="text-xl font-bold text-accent-primary font-display mb-2 uppercase tracking-tight">Security</h3>
-                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">Manage your account protection.</p>
+                    <h3 className="text-xl font-bold text-accent-primary font-display mb-2 uppercase tracking-tight">{t('securityTitle')}</h3>
+                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">{t('securityDesc')}</p>
 
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">Current Password</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">{t('currentPassword')}</label>
                                 <input
                                     type="password"
                                     value={oldPassword}
@@ -302,7 +305,7 @@ export default function SettingsPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">New Password</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2">{t('newPassword')}</label>
                                 <input
                                     type="password"
                                     value={newPassword}
@@ -311,19 +314,19 @@ export default function SettingsPage() {
                                 />
                             </div>
                         </div>
-                        <Button variant="secondary" className="w-full" onClick={handleChangePassword}>Update Password</Button>
+                        <Button variant="secondary" className="w-full" onClick={handleChangePassword}>{t('updatePassword')}</Button>
                     </div>
                 </GlassCard>
 
                 {/* Danger Zone */}
                 <GlassCard className="border-red-500/30">
-                    <h3 className="text-xl font-bold text-red-500 font-display mb-2 uppercase tracking-tight">Danger Zone</h3>
-                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">Irreversible account actions.</p>
+                    <h3 className="text-xl font-bold text-red-500 font-display mb-2 uppercase tracking-tight">{t('dangerZoneTitle')}</h3>
+                    <p className="text-xs text-text-secondary mb-6 leading-relaxed">{t('dangerZoneDesc')}</p>
 
                     <div className="space-y-4">
                         <div className="flex flex-col md:flex-row gap-4">
-                            <Button variant="outline" className="flex-1 !border-red-500/50 !text-red-500 bg-red-500/5 hover:bg-red-500/10" onClick={() => setResetModalOpen(true)}>Reset Progress</Button>
-                            <Button variant="outline" className="flex-1 !border-red-600 !text-red-600 hover:bg-red-600/5" onClick={() => setDeleteModalOpen(true)}>Delete Account</Button>
+                            <Button variant="outline" className="flex-1 !border-red-500/50 !text-red-500 bg-red-500/5 hover:bg-red-500/10" onClick={() => setResetModalOpen(true)}>{t('resetProgress')}</Button>
+                            <Button variant="outline" className="flex-1 !border-red-600 !text-red-600 hover:bg-red-600/5" onClick={() => setDeleteModalOpen(true)}>{t('deleteAccount')}</Button>
                         </div>
                     </div>
                 </GlassCard>
@@ -334,13 +337,13 @@ export default function SettingsPage() {
                 <Portal>
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
                         <GlassCard className="max-w-md border-red-500 shadow-2xl">
-                            <h3 className="text-2xl font-bold text-red-500 font-display mb-4">Confirm Reset</h3>
+                            <h3 className="text-2xl font-bold text-red-500 font-display mb-4">{t('confirmReset')}</h3>
                             <p className="text-sm text-text-secondary mb-8 leading-relaxed">
-                                This will completely wipe your study records and set all characters back to "New". This action cannot be undone.
+                                {t('resetWarning')}
                             </p>
                             <div className="flex gap-4">
-                                <Button variant="ghost" className="flex-1" onClick={() => setResetModalOpen(false)}>Cancel</Button>
-                                <Button className="flex-1 bg-red-600 hover:bg-red-500" onClick={handleResetProgress}>Reset Everything</Button>
+                                <Button variant="ghost" className="flex-1" onClick={() => setResetModalOpen(false)}>{tc('cancel')}</Button>
+                                <Button className="flex-1 bg-red-600 hover:bg-red-500" onClick={handleResetProgress}>{t('resetEverything')}</Button>
                             </div>
                         </GlassCard>
                     </div>
@@ -352,20 +355,24 @@ export default function SettingsPage() {
                 <Portal>
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
                         <GlassCard className="max-w-md border-red-700 shadow-2xl">
-                            <h3 className="text-2xl font-bold text-red-600 font-display mb-2">Delete Account</h3>
-                            <p className="text-sm text-text-secondary mb-6">Type <span className="text-text-primary font-black uppercase">DELETE</span> to confirm.</p>
+                            <h3 className="text-2xl font-bold text-red-600 font-display mb-2">{t('deleteAccountTitle')}</h3>
+                            <p className="text-sm text-text-secondary mb-6">
+                                {t.rich('deletePrompt', {
+                                    keyword: (chunks) => <span className="text-text-primary font-black uppercase">{chunks}</span>,
+                                })}
+                            </p>
 
                             <input
                                 type="text"
                                 value={deleteInput}
                                 onChange={(e) => setDeleteInput(e.target.value.toUpperCase())}
                                 className="w-full bg-white/5 border border-red-500/30 rounded-xl px-4 py-4 text-center text-xl font-black text-red-500 mb-8 outline-none focus:border-red-500"
-                                placeholder="Type here..."
+                                placeholder={t('deleteInputPlaceholder')}
                             />
 
                             <div className="flex gap-4">
-                                <Button variant="ghost" className="flex-1" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
-                                <Button className="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-20" disabled={deleteInput !== 'DELETE'} onClick={handleDeleteAccount}>Permanently Delete</Button>
+                                <Button variant="ghost" className="flex-1" onClick={() => setDeleteModalOpen(false)}>{tc('cancel')}</Button>
+                                <Button className="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-20" disabled={deleteInput !== 'DELETE'} onClick={handleDeleteAccount}>{t('permanentlyDelete')}</Button>
                             </div>
                         </GlassCard>
                     </div>
@@ -377,16 +384,16 @@ export default function SettingsPage() {
                 <Portal>
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
                         <GlassCard className="max-w-md border-accent-primary/30 shadow-2xl">
-                            <h3 className="text-2xl font-bold text-text-primary font-display mb-2">Update Email?</h3>
+                            <h3 className="text-2xl font-bold text-text-primary font-display mb-2">{t('updateEmailTitle')}</h3>
                             <p className="text-sm text-text-secondary mb-2 leading-relaxed">
-                                Your email will be changed to:
+                                {t('updateEmailDesc')}
                             </p>
                             <div className="px-4 py-3 bg-white/5 rounded-xl border border-white/10 mb-6 text-center font-bold text-text-primary">
-                                {email || <span className="text-text-secondary italic font-normal">None</span>}
+                                {email || <span className="text-text-secondary italic font-normal">{t('noEmail')}</span>}
                             </div>
                             <div className="flex gap-4">
-                                <Button variant="ghost" className="flex-1" onClick={() => setEmailConfirmOpen(false)}>Cancel</Button>
-                                <Button className="flex-1" onClick={async () => { setEmailConfirmOpen(false); await saveProfile(); }}>Confirm</Button>
+                                <Button variant="ghost" className="flex-1" onClick={() => setEmailConfirmOpen(false)}>{tc('cancel')}</Button>
+                                <Button className="flex-1" onClick={async () => { setEmailConfirmOpen(false); await saveProfile(); }}>{tc('confirm')}</Button>
                             </div>
                         </GlassCard>
                     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui';
 import { loadCharacter, type CharacterData } from '@/lib/strokeData';
 
@@ -31,7 +32,7 @@ type HanziWriterInstance = {
 
 function computeResponsiveSize(max: number): number {
     if (typeof window === 'undefined') return max;
-    const padding = 48; // breathing room for page gutters
+    const padding = 48;
     return Math.min(max, Math.max(220, window.innerWidth - padding));
 }
 
@@ -42,6 +43,7 @@ export function CharacterWriter({
     onUnavailable,
     onSuccess,
 }: Props) {
+    const t = useTranslations('characterWriter');
     const hostRef = useRef<HTMLDivElement>(null);
     const writerRef = useRef<HanziWriterInstance | null>(null);
     const onSuccessRef = useRef(onSuccess);
@@ -179,13 +181,13 @@ export function CharacterWriter({
                 />
                 {succeeded && (
                     <div className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-green-500 text-white text-xs font-bold uppercase tracking-widest shadow-lg animate-in fade-in duration-300">
-                        ✓ {mistakes === 0 ? 'Perfect!' : 'Correct'}
+                        ✓ {mistakes === 0 ? t('perfect') : t('correct')}
                     </div>
                 )}
             </div>
             <div className="h-7 flex items-center justify-center text-sm">
                 {loading && !unavailable && (
-                    <span className="text-text-secondary">Loading…</span>
+                    <span className="text-text-secondary">{t('loading')}</span>
                 )}
                 {!loading && !error && !unavailable && quocNgu && (
                     <span className="text-text-primary font-serif text-base lowercase">
@@ -194,7 +196,7 @@ export function CharacterWriter({
                 )}
                 {unavailable && (
                     <span className="text-text-secondary max-w-xs text-center">
-                        No stroke data for <span className="font-nom text-base">{character}</span>
+                        {t('noStrokeData')} <span className="font-nom text-base">{character}</span>
                     </span>
                 )}
                 {error && <span className="text-red-400 max-w-xs text-center">{error}</span>}
@@ -207,7 +209,7 @@ export function CharacterWriter({
                     disabled={loading || !!error || unavailable}
                     className="!px-3 !py-1 text-xs"
                 >
-                    Animate
+                    {t('animate')}
                 </Button>
                 <Button
                     variant="outline"
@@ -216,7 +218,7 @@ export function CharacterWriter({
                     disabled={loading || !!error || unavailable}
                     className="!px-3 !py-1 text-xs"
                 >
-                    Hint
+                    {t('hint')}
                 </Button>
             </div>
         </div>

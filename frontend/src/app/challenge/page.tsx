@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
-import Link from 'next/link';
 
 interface ChallengeItem {
     id: number;
@@ -33,6 +34,8 @@ function cleanText(text: string): string {
 function ChallengePage() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const t = useTranslations('challenge');
+    const tc = useTranslations('common');
 
     const textId = searchParams.get('text_id') || 'all';
     const listId = searchParams.get('list_id') || '';
@@ -52,7 +55,6 @@ function ChallengePage() {
     const inputRef = useRef<HTMLInputElement>(null);
     const isDataLoaded = useRef(false);
 
-    // Load challenge content
     useEffect(() => {
         const load = async () => {
             try {
@@ -70,7 +72,6 @@ function ChallengePage() {
         load();
     }, [textId, listId]);
 
-    // Focus input when playing
     useEffect(() => {
         if (phase === 'playing') {
             setTimeout(() => inputRef.current?.focus(), 100);
@@ -133,9 +134,7 @@ function ChallengePage() {
         const correctClean = cleanText(lines[currentIndex].quoc_ngu);
 
         if (userClean === correctClean) {
-            // Award XP
             apiFetch('challenge/correct', { method: 'POST' }).catch(() => {});
-            // Auto-save progress
             apiFetch('challenge/pause', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -148,7 +147,7 @@ function ChallengePage() {
 
             const nextIdx = currentIndex + 1;
             setScore(nextIdx);
-            setFeedback({ text: 'Correct!', correct: true });
+            setFeedback({ text: t('correct'), correct: true });
 
             setTimeout(() => {
                 setFeedback(null);
@@ -165,7 +164,7 @@ function ChallengePage() {
                 setWrongAnswer(userAnswer);
                 endGame(false);
             } else {
-                setFeedback({ text: `Incorrect. Correct: ${lines[currentIndex].quoc_ngu}`, correct: false });
+                setFeedback({ text: t('incorrect', { answer: lines[currentIndex].quoc_ngu }), correct: false });
             }
         }
     };
@@ -203,7 +202,7 @@ function ChallengePage() {
         router.push('/dashboard');
     };
 
-    const modeLabel = mode === 'normal' ? 'Normal Mode' : mode === 'practice' ? 'Practice' : 'Sudden Death';
+    const modeLabel = mode === 'normal' ? t('modeNormal') : mode === 'practice' ? t('modePractice') : t('modeSuddenDeath');
     const modeColor = mode === 'normal' ? 'text-amber-600' : mode === 'practice' ? 'text-blue-500' : 'text-red-500';
     const currentLine = lines[currentIndex];
 
@@ -211,7 +210,7 @@ function ChallengePage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[70vh]">
                 <div className="w-12 h-12 border-4 border-accent-gold/20 border-t-accent-primary rounded-full animate-spin mb-4" />
-                <p className="text-text-secondary font-black uppercase tracking-widest text-xs">Loading Archive...</p>
+                <p className="text-text-secondary font-black uppercase tracking-widest text-xs">{t('loading')}</p>
             </div>
         );
     }
@@ -221,9 +220,9 @@ function ChallengePage() {
             <div className="flex items-center justify-center min-h-[70vh] px-4">
                 <GlassCard className="w-full max-w-md p-6 md:p-10 border-accent-primary/20 shadow-2xl animate-in zoom-in-95 duration-300">
                     <div className="text-center mb-6 md:mb-8">
-                        <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">Chronicle Challenge</div>
-                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary">Choose Your Path</h2>
-                        <p className="text-[10px] md:text-xs text-text-secondary mt-2 opacity-60">{lines.length} lines loaded</p>
+                        <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] mb-2">{t('kicker')}</div>
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary">{t('choosePath')}</h2>
+                        <p className="text-[10px] md:text-xs text-text-secondary mt-2 opacity-60">{t('linesLoaded', { count: lines.length })}</p>
                     </div>
 
                     <div className="flex flex-col gap-2 md:gap-3">
@@ -232,10 +231,10 @@ function ChallengePage() {
                             className="text-left p-4 md:p-5 border-2 border-white/10 hover:border-amber-500/50 hover:bg-amber-500/5 rounded-2xl transition-all group"
                         >
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-amber-600 transition-colors">Normal Mode</span>
-                                <span className="px-2 py-0.5 bg-amber-100/20 text-amber-600 text-[8px] md:text-[9px] rounded font-black uppercase">Progression</span>
+                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-amber-600 transition-colors">{t('normal')}</span>
+                                <span className="px-2 py-0.5 bg-amber-100/20 text-amber-600 text-[8px] md:text-[9px] rounded font-black uppercase">{t('normalBadge')}</span>
                             </div>
-                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">Mistakes won't end your run. Best for learning.</p>
+                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">{t('normalDesc')}</p>
                         </button>
 
                         <button
@@ -243,10 +242,10 @@ function ChallengePage() {
                             className="text-left p-4 md:p-5 border-2 border-white/10 hover:border-red-500/50 hover:bg-red-500/5 rounded-2xl transition-all group"
                         >
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-red-500 transition-colors">Sudden Death</span>
-                                <span className="px-2 py-0.5 bg-red-100/20 text-red-500 text-[8px] md:text-[9px] rounded font-black uppercase">High Stakes</span>
+                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-red-500 transition-colors">{t('suddenDeath')}</span>
+                                <span className="px-2 py-0.5 bg-red-100/20 text-red-500 text-[8px] md:text-[9px] rounded font-black uppercase">{t('suddenDeathBadge')}</span>
                             </div>
-                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">One mistake ends the run. Compete on the leaderboard.</p>
+                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">{t('suddenDeathDesc')}</p>
                         </button>
 
                         <button
@@ -254,16 +253,16 @@ function ChallengePage() {
                             className="text-left p-4 md:p-5 border-2 border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl transition-all group"
                         >
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-blue-500 transition-colors">Practice Mode</span>
-                                <span className="px-2 py-0.5 bg-blue-100/20 text-blue-500 text-[8px] md:text-[9px] rounded font-black uppercase">No Limits</span>
+                                <span className="font-black text-text-primary uppercase tracking-widest text-[10px] md:text-xs group-hover:text-blue-500 transition-colors">{t('practice')}</span>
+                                <span className="px-2 py-0.5 bg-blue-100/20 text-blue-500 text-[8px] md:text-[9px] rounded font-black uppercase">{t('practiceBadge')}</span>
                             </div>
-                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">Pick any line to start from. No leaderboard tracking.</p>
+                            <p className="text-[10px] md:text-[11px] text-text-secondary opacity-70">{t('practiceDesc')}</p>
                         </button>
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-white/5 text-center">
                         <Link href="/dashboard" className="text-[10px] font-black text-text-secondary/50 uppercase tracking-widest hover:text-text-secondary transition-colors">
-                            Return to Dashboard
+                            {t('returnToDashboard')}
                         </Link>
                     </div>
                 </GlassCard>
@@ -276,8 +275,8 @@ function ChallengePage() {
             <div className="flex items-center justify-center min-h-[70vh] px-4">
                 <GlassCard className="w-full max-w-md p-6 md:p-10 border-blue-500/30 shadow-2xl animate-in zoom-in-95 duration-300">
                     <div className="text-center mb-6 md:mb-8">
-                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary mb-2">Select Starting Line</h2>
-                        <p className="text-[10px] md:text-xs text-text-secondary opacity-60">Line 1 to {lines.length}</p>
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary mb-2">{t('selectStartLine')}</h2>
+                        <p className="text-[10px] md:text-xs text-text-secondary opacity-60">{t('lineRange', { max: lines.length })}</p>
                     </div>
                     <input
                         type="number"
@@ -289,13 +288,13 @@ function ChallengePage() {
                     />
                     <div className="flex flex-col gap-3">
                         <Button className="w-full py-4 bg-blue-600 hover:bg-blue-500" onClick={confirmPracticeStart}>
-                            Begin Practice
+                            {t('beginPractice')}
                         </Button>
                         <button
                             onClick={() => setPhase('mode_select')}
                             className="text-[10px] font-black text-text-secondary/50 uppercase tracking-widest hover:text-text-secondary transition-colors"
                         >
-                            Go Back
+                            {tc('goBack')}
                         </button>
                     </div>
                 </GlassCard>
@@ -309,21 +308,25 @@ function ChallengePage() {
                 <GlassCard className="w-full max-w-md p-6 md:p-10 border-accent-primary/30 shadow-2xl animate-in zoom-in-95 duration-300">
                     <div className="text-center mb-6 md:mb-8">
                         <div className="text-3xl md:text-4xl mb-3 md:mb-4">📜</div>
-                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary mb-3 md:mb-4">Saved Session Found</h2>
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-text-primary mb-3 md:mb-4">{t('savedFound')}</h2>
                         <p className="text-sm md:text-base text-text-secondary leading-relaxed">
-                            You were on line <span className="font-black text-accent-primary">{savedIndex + 1}</span> in{' '}
-                            <span className="font-black text-text-primary">{modeLabel}</span>. Resume?
+                            {t.rich('savedBody', {
+                                lineNum: savedIndex + 1,
+                                modeName: modeLabel,
+                                line: (chunks) => <span className="font-black text-accent-primary">{chunks}</span>,
+                                mode: (chunks) => <span className="font-black text-text-primary">{chunks}</span>,
+                            })}
                         </p>
                     </div>
                     <div className="flex flex-col gap-2 md:gap-3">
                         <Button className="w-full py-3 md:py-4 text-xs md:text-sm font-black uppercase tracking-widest" onClick={resumeGame}>
-                            Resume Session
+                            {t('resume')}
                         </Button>
                         <button
                             onClick={restartGame}
                             className="text-[10px] font-black text-red-500/50 uppercase tracking-widest hover:text-red-500 transition-colors"
                         >
-                            Start Over (Discard Progress)
+                            {t('startOver')}
                         </button>
                     </div>
                 </GlassCard>
@@ -337,28 +340,28 @@ function ChallengePage() {
                 <GlassCard className="w-full max-w-md p-6 md:p-10 text-center shadow-2xl animate-in zoom-in-95 duration-300">
                     <div className="text-4xl md:text-5xl mb-4 md:mb-6">{gameOverWin ? '🏆' : '💀'}</div>
                     <h2 className={`text-3xl md:text-4xl font-display font-bold mb-3 md:mb-4 ${gameOverWin ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {gameOverWin ? 'Text Complete!' : 'Game Over!'}
+                        {gameOverWin ? t('textComplete') : t('gameOver')}
                     </h2>
                     <p className="text-xs md:text-base text-text-secondary mb-1 md:mb-2">
-                        {mode === 'practice' ? 'You reached line' : 'You made it to line'}
+                        {mode === 'practice' ? t('youReached') : t('youMadeIt')}
                     </p>
                     <p className="text-5xl md:text-6xl font-black text-accent-primary mb-6 md:mb-8">{score}</p>
 
                     {!gameOverWin && mode === 'sudden_death' && (
                         <div className="mb-8 p-4 bg-white/5 rounded-2xl border border-white/10 text-left">
-                            <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">Correct Answer</p>
+                            <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1">{t('correctAnswer')}</p>
                             <p className="font-serif italic text-text-primary text-lg">{correctAnswer}</p>
-                            <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mt-3 mb-1">Your Answer</p>
-                            <p className="font-serif text-red-500 line-through">{wrongAnswer || '(blank)'}</p>
+                            <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest mt-3 mb-1">{t('yourAnswer')}</p>
+                            <p className="font-serif text-red-500 line-through">{wrongAnswer || t('blank')}</p>
                         </div>
                     )}
 
                     <div className="flex gap-3 justify-center">
                         <Button variant="secondary" onClick={() => setPhase('mode_select')}>
-                            Try Again
+                            {t('tryAgain')}
                         </Button>
                         <Button onClick={() => router.push(`/leaderboard?source=${listId ? 'list' : textId}`)}>
-                            Leaderboard
+                            {t('leaderboard')}
                         </Button>
                     </div>
                 </GlassCard>
@@ -366,12 +369,10 @@ function ChallengePage() {
         );
     }
 
-    // Playing phase
     if (!currentLine) return null;
 
     return (
         <div className="flex flex-col items-center py-2 md:py-8 max-w-2xl mx-auto px-4 animate-in fade-in duration-300">
-            {/* Header */}
             <div className="w-full flex justify-between items-center mb-4 md:mb-8">
                 <div className="flex items-center gap-3">
                     <button
@@ -381,7 +382,7 @@ function ChallengePage() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Pause
+                        {t('pause')}
                     </button>
                     <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest ${modeColor} bg-current/10`}
                         style={{ backgroundColor: 'transparent' }}>
@@ -390,7 +391,7 @@ function ChallengePage() {
                 </div>
                 <div className="text-right">
                     <p className="text-[9px] md:text-[10px] text-text-secondary uppercase tracking-widest font-black">
-                        {mode === 'normal' ? 'Progress' : mode === 'practice' ? 'Line' : 'Streak'}
+                        {mode === 'normal' ? t('progress') : mode === 'practice' ? t('line') : t('streak')}
                     </p>
                     <p className="text-3xl md:text-4xl font-black text-accent-primary leading-none">
                         {mode === 'practice' ? currentIndex + 1 : score}
@@ -398,17 +399,15 @@ function ChallengePage() {
                 </div>
             </div>
 
-            {/* Main Card */}
             <GlassCard className="w-full text-center py-8 md:py-12 px-6 md:px-8 mb-4 md:mb-6 shadow-2xl">
                 <p className="text-[9px] md:text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4 md:mb-6">
-                    Line {currentIndex + 1} of {lines.length}
+                    {t('lineCount', { current: currentIndex + 1, total: lines.length })}
                 </p>
 
                 <div className="font-nom text-5xl md:text-7xl text-text-primary leading-none mb-6 md:mb-8">
                     {currentLine.nom}
                 </div>
 
-                {/* Lookup links — only for single characters */}
                 {currentLine.nom.length === 1 && (
                     <div className="flex gap-4 md:gap-6 justify-center mb-6 md:mb-8">
                         <a
@@ -434,7 +433,6 @@ function ChallengePage() {
                     </div>
                 )}
 
-                {/* Input */}
                 <div className="w-full max-w-md mx-auto mb-4">
                     <input
                         ref={inputRef}
@@ -448,13 +446,12 @@ function ChallengePage() {
                             }
                         }}
                         disabled={!!feedback}
-                        placeholder="Type the reading..."
+                        placeholder={t('typeReading')}
                         className="w-full bg-white/5 border-b-2 border-white/20 focus:border-accent-primary text-center text-xl md:text-2xl text-text-primary py-3 px-4 outline-none transition-colors placeholder:text-text-secondary/30 font-serif"
                         autoComplete="off"
                     />
                 </div>
 
-                {/* Feedback */}
                 <div className={`min-h-8 mb-4 text-lg font-black transition-all duration-200 ${feedback ? 'opacity-100' : 'opacity-0'}`}>
                     {feedback && (
                         <span className={feedback.correct ? 'text-emerald-500' : 'text-red-500'}>
@@ -463,10 +460,9 @@ function ChallengePage() {
                     )}
                 </div>
 
-                {/* Controls */}
                 {feedback && !feedback.correct ? (
                     <Button onClick={retryLine} variant="secondary" className="px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm font-black uppercase tracking-widest">
-                        Try Again
+                        {t('tryAgain')}
                     </Button>
                 ) : (
                     <Button
@@ -474,13 +470,13 @@ function ChallengePage() {
                         disabled={!userAnswer.trim() || !!feedback}
                         className="px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm shadow-lg shadow-accent-primary/20 font-black uppercase tracking-widest"
                     >
-                        Submit Answer
+                        {t('submitAnswer')}
                     </Button>
                 )}
             </GlassCard>
 
             <p className="text-[10px] font-black text-text-secondary/30 uppercase tracking-[0.3em]">
-                Progress is automatically saved
+                {t('autoSave')}
             </p>
         </div>
     );

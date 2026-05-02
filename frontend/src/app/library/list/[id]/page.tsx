@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { GlassCard, Button } from '@/components/ui';
@@ -26,6 +27,8 @@ interface ListDetail {
 }
 
 export default function ListDetailPage() {
+    const t = useTranslations('library.list');
+    const tc = useTranslations('common');
     const params = useParams();
     const router = useRouter();
     const listId = params.id;
@@ -54,7 +57,7 @@ export default function ListDetailPage() {
     }, [listId]);
 
     const handleRemove = async (type: string, id: number) => {
-        if (!confirm('Remove this item from the collection?')) return;
+        if (!confirm(t('removeConfirm'))) return;
         try {
             await apiFetch(`lists/${listId}/items/${type}/${id}`, { method: 'DELETE' });
             fetchList();
@@ -64,7 +67,7 @@ export default function ListDetailPage() {
     };
 
     const handleDeleteList = async () => {
-        if (!confirm('PERMANENTLY DELETE this entire collection? This action is irreversible.')) return;
+        if (!confirm(t('deleteConfirm'))) return;
         try {
             await apiFetch(`lists/${listId}`, { method: 'DELETE' });
             router.push('/library');
@@ -110,7 +113,7 @@ export default function ListDetailPage() {
                             </div>
                         </Link>
                         <div className="text-[10px] font-black text-accent-primary uppercase tracking-[0.4em] leading-none">
-                            Personal Collection
+                            {t('kicker')}
                         </div>
                     </div>
 
@@ -133,7 +136,7 @@ export default function ListDetailPage() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Delete List
+                        {t('deleteList')}
                     </span>
                 </Button>
             </header>
@@ -144,16 +147,16 @@ export default function ListDetailPage() {
                     <thead>
                         <tr className="bg-white/5 border-b border-white/10">
                             <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest w-12 text-center">#</th>
-                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">Nôm Expression</th>
-                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">Transcription</th>
-                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest text-right">Actions</th>
+                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">{t('tableExpression')}</th>
+                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest">{t('tableTranscription')}</th>
+                            <th className="p-4 md:p-6 font-black text-[10px] text-text-secondary uppercase tracking-widest text-right">{t('tableActions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {data.items.length === 0 ? (
                             <tr>
                                 <td colSpan={4} className="p-20 text-center italic text-text-secondary opacity-30 font-display text-2xl">
-                                    This collection is currently hollow...
+                                    {t('empty')}
                                 </td>
                             </tr>
                         ) : (
@@ -186,7 +189,7 @@ export default function ListDetailPage() {
                                             onClick={() => handleRemove(item.type, item.id)}
                                             className="text-[9px] font-black uppercase tracking-widest text-red-500/50 hover:text-red-500 hover:bg-red-500/10"
                                         >
-                                            Remove
+                                            {tc('remove')}
                                         </Button>
                                     </td>
                                 </tr>
@@ -198,7 +201,7 @@ export default function ListDetailPage() {
 
             <div className="mt-8 text-center">
                 <p className="text-[10px] font-black text-text-secondary/30 uppercase tracking-[0.4em]">
-                    {data.items.length} items curated in this collection
+                    {t('totalCurated', { count: data.items.length })}
                 </p>
             </div>
 

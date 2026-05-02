@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useTranslations, useMessages } from 'next-intl';
 import { GlassCard, Button } from '@/components/ui';
 
 interface SourceCardProps {
@@ -26,19 +29,23 @@ export const SourceCard: React.FC<SourceCardProps> = ({
     onSetActive,
     onBrowse
 }) => {
+    const t = useTranslations('sourceCard');
+    const messages = useMessages() as { textDescriptions?: Record<string, string> };
+    const localizedDescription = messages.textDescriptions?.[title] || description;
     const isCurated = author && ['Chunom.org', 'Digitizing Vietnam Team'].includes(author);
-    const typeLabel = type === 'text' ? (isCurated ? 'Word List' : 'Classic Text') : 'Custom List';
+    const typeLabel = type === 'text'
+        ? (isCurated ? t('typeWordList') : t('typeClassicText'))
+        : t('typeCustomList');
 
     return (
         <GlassCard className={`p-0 group relative overflow-hidden transition-[background-color,border-color,box-shadow,transform,opacity] duration-500 hover:shadow-2xl hover:shadow-accent-primary/10 border-white/5 ${isActive ? 'ring-2 ring-accent-primary ring-offset-4 ring-offset-background' : ''}`}>
             {isActive && (
                 <div className="absolute top-0 right-0 bg-accent-primary text-white text-[10px] font-black px-4 py-1.5 rounded-bl-xl shadow-lg tracking-[0.2em] z-10 animate-in slide-in-from-top slide-in-from-right duration-500">
-                    ACTIVE
+                    {t('active')}
                 </div>
             )}
 
             <div className="flex flex-col md:flex-row min-h-[160px]">
-                {/* Main Content Area */}
                 <div className="flex-grow p-6 flex flex-col justify-center">
                     <div className="flex items-center gap-3 mb-2">
                         <span className="text-[10px] font-black text-accent-primary uppercase tracking-[0.2em]">
@@ -46,7 +53,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
                         </span>
                         {itemCount !== undefined && (
                             <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-white/5 text-text-secondary border border-white/10 uppercase tracking-widest">
-                                {itemCount} Items
+                                {t('itemsCount', { count: itemCount })}
                             </span>
                         )}
                     </div>
@@ -57,18 +64,17 @@ export const SourceCard: React.FC<SourceCardProps> = ({
 
                     {author && (
                         <p className="text-xs text-text-secondary italic opacity-60 mb-2 font-serif">
-                            by {author}
+                            {t('byAuthor', { author })}
                         </p>
                     )}
 
-                    {description && (
+                    {localizedDescription && (
                         <p className="hidden md:block text-sm font-serif text-text-secondary line-clamp-2 leading-relaxed opacity-80 mt-2">
-                            {description}
+                            {localizedDescription}
                         </p>
                     )}
                 </div>
 
-                {/* Integrated Action Sidebar */}
                 <div className="md:w-52 md:border-l border-t md:border-t-0 border-accent-gold/20 p-6 flex flex-col gap-3 justify-center shrink-0">
                     <Button
                         onClick={onStudy}
@@ -78,7 +84,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                             </svg>
-                            Study Now
+                            {t('studyNow')}
                         </span>
                     </Button>
 
@@ -88,7 +94,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
                             onClick={onSetActive}
                             className="w-full font-black uppercase tracking-widest text-[10px] py-3 border-white/10 bg-white/5 hover:bg-white/10"
                         >
-                            Set Active
+                            {t('setActive')}
                         </Button>
                     )}
 
@@ -97,7 +103,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
                         onClick={onBrowse}
                         className="w-full font-black uppercase tracking-widest text-[9px] py-2.5 text-text-primary bg-white/5 hover:bg-white/10 border-white/10 hover:border-accent-gold/20 transition-colors"
                     >
-                        {type === 'list' ? 'Manage List' : 'Browse Content'}
+                        {type === 'list' ? t('manageList') : t('browseContent')}
                     </Button>
                 </div>
             </div>

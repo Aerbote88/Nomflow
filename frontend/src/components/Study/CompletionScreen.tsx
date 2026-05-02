@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui';
 
 interface CompletionScreenProps {
@@ -8,10 +11,9 @@ interface CompletionScreenProps {
 }
 
 export const CompletionScreen: React.FC<CompletionScreenProps> = ({ isSRS, isGuest = false }) => {
-    const title = isSRS ? "All Caught Up!" : "Session Complete!";
-    const message = isSRS
-        ? "You've finished all your scheduled reviews for this source."
-        : "You've finished this practice session. What would you like to do next?";
+    const t = useTranslations('completion');
+    const title = isSRS ? t('caughtUpTitle') : t('completeTitle');
+    const message = isSRS ? t('caughtUpBody') : t('completeBody');
 
     return (
         <div className="flex flex-col items-center justify-center py-8 w-full max-w-sm mx-auto">
@@ -29,19 +31,19 @@ export const CompletionScreen: React.FC<CompletionScreenProps> = ({ isSRS, isGue
                         className="w-full shadow-lg shadow-accent-primary/20"
                         onClick={() => window.location.reload()}
                     >
-                        Go Again
+                        {t('goAgain')}
                     </Button>
                 )}
                 {!isGuest && (
                     <>
                         <Link href="/dashboard" className="w-full">
                             <Button size="lg" variant={isSRS ? 'primary' : 'secondary'} className="w-full">
-                                Back to Dashboard
+                                {t('backDashboard')}
                             </Button>
                         </Link>
                         <Link href="/library" className="w-full">
                             <Button size="lg" variant={isSRS ? 'secondary' : 'ghost'} className="w-full">
-                                Go to Library
+                                {t('goToLibrary')}
                             </Button>
                         </Link>
                     </>
