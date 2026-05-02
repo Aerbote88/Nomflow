@@ -97,6 +97,25 @@ function StudyContent() {
         currentItemRef.current = currentItem;
     }, [currentItem]);
 
+    // Compact session-state snapshot for dev-console diagnostics. Cheap to call
+    // — no allocation surprises since all fields are primitives derived from
+    // already-tracked state. Only ever invoked inside logger.log() which is
+    // gated on dev mode by frontend/src/lib/logger.ts.
+    const sessionSnapshot = () => ({
+        mode,
+        textId,
+        listId,
+        customParams,
+        queueLen: queueRef.current.length,
+        currentItemId: currentItemRef.current
+            ? `${currentItemRef.current.item_type}:${currentItemRef.current.content_id}`
+            : null,
+        reviewedCount: reviewedInSession.current.size,
+        statsDue: stats.due,
+        statsStudied: stats.studied,
+        noMoreRemaining: noMoreRemaining.current,
+    });
+
     const fetchItems = useCallback(async (silent = false) => {
         if (isFetchingRef.current) return;
         isFetchingRef.current = true;
@@ -145,14 +164,34 @@ function StudyContent() {
                 params.append('seen', sessionSeen.join(','));
             }
 
-            logger.log(`[Study Debug] Fetching items. In-flight IDs:`, inFlight);
+            logger.log('[Study]', 'fetch:start', {
+                silent,
+                seenLen: sessionSeen.length,
+                count: params.get('count'),
+                snapshot: sessionSnapshot(),
+            });
 
             type StudyNextDone = { status: 'done' };
             type StudyNextResponse = StudyNextDone | StudyItem | StudyItem[];
             const isDoneResponse = (d: StudyNextResponse): d is StudyNextDone =>
                 !Array.isArray(d) && 'status' in d && d.status === 'done';
             const data = await apiFetch<StudyNextResponse>(`study/next?${params.toString()}`);
-            logger.log(`[Study Debug] Received data:`, data);
+            if (isDoneResponse(data)) {
+                logger.log('[Study]', 'fetch:result', { status: 'done', snapshot: sessionSnapshot() });
+            } else {
+                const items = Array.isArray(data) ? data : [data];
+                const dueCount = items.filter(i => i.is_new === false).length;
+                const newCount = items.filter(i => i.is_new === true).length;
+                const backendTotalDue = items[0]?.session_stats?.due;
+                logger.log('[Study]', 'fetch:result', {
+                    returned: items.length,
+                    due: dueCount,
+                    new: newCount,
+                    backendTotalDue,
+                    statsDue: stats.due,
+                    drift: backendTotalDue != null ? backendTotalDue - stats.due : null,
+                });
+            }
 
             if (isDoneResponse(data)) {
                 noMoreRemaining.current = true;
@@ -181,16 +220,19 @@ function StudyContent() {
                 );
 
                 if (uniqueNewItems.length > 0) {
-                    logger.log(`[Study Debug] Appending ${uniqueNewItems.length} unique items to queue`);
                     setQueue(prev => [...prev, ...uniqueNewItems]);
                     queueRef.current = [...queueRef.current, ...uniqueNewItems];
+                    logger.log('[Study]', 'queue:append', {
+                        added: uniqueNewItems.length,
+                        queueLen: queueRef.current.length,
+                    });
                     // Prevent concurrent race condition where a stale prefetch overwrites our optimistically decremented due count
                     const firstStats = uniqueNewItems[0]?.session_stats;
                     if (firstStats && activeSubmissionsRef.current === 0) {
                         setStats(prev => ({ ...prev, due: firstStats.due }));
                     }
                 } else {
-                    logger.log(`[Study Debug] No new unique items to add`);
+                    logger.log('[Study]', 'queue:append', { added: 0, queueLen: queueRef.current.length });
                 }
             }
         } catch (err) {
@@ -332,7 +374,11 @@ function StudyContent() {
             return;
         }
         const next = queueRef.current[0];
-        logger.log(`[Study Debug] Advancing to next item:`, `${next.item_type}:${next.content_id}`);
+        logger.log('[Study]', 'queue:advance', {
+            to: `${next.item_type}:${next.content_id}`,
+            isNew: !!next.is_new,
+            queueLen: queueRef.current.length,
+        });
         
         setQueue(prev => prev.slice(1));
         queueRef.current = queueRef.current.slice(1);
@@ -345,7 +391,7 @@ function StudyContent() {
         // not for guests — the sample endpoint returns the same deck and would
         // reset the queue).
         if (mode !== 'random' && !isGuest && queueRef.current.length < 3) {
-            logger.log(`[Study Debug] Queue low (${queueRef.current.length} remaining), pre-fetching...`);
+            logger.log('[Study]', 'prefetch:trigger', { queueLen: queueRef.current.length });
             fetchItems(true);
         }
 
@@ -357,6 +403,13 @@ function StudyContent() {
         if (!currentItem) return;
 
         const reviewedItem = currentItem;
+        logger.log('[Study]', 'review:submit', {
+            item: `${reviewedItem.item_type}:${reviewedItem.content_id}`,
+            isNew: !!reviewedItem.is_new,
+            isPractice: !!reviewedItem.is_practice,
+            quality,
+            statsDueBefore: stats.due,
+        });
         setLastReviewedItem(reviewedItem);
         setLastReviewedQuality(quality);
         reviewedInSession.current.add(`${reviewedItem.item_type}:${reviewedItem.content_id}`);
