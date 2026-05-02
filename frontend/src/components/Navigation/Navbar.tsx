@@ -43,7 +43,31 @@ export function Navbar() {
         window.location.href = '/login';
     };
 
-    if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password') return null;
+    const isAuthRoute = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
+
+    if (isAuthRoute) {
+        return (
+            <nav className="w-full mb-4 md:mb-8 pb-3 md:pb-4 animate-in fade-in duration-700 relative z-[100]">
+                <div className="flex justify-between items-center">
+                    <Link href="/" className="group flex items-center gap-3">
+                        <Image
+                            src="/nomflow-wordmark-v3.png"
+                            alt=""
+                            width={880}
+                            height={1024}
+                            priority
+                            className="h-10 w-auto select-none scale-125 origin-center transition-transform duration-300"
+                        />
+                        <div className="flex flex-col">
+                            <span className="text-lg font-display font-bold tracking-tight text-text-primary">NômFlow</span>
+                            <span className="text-[8px] font-display font-bold uppercase tracking-[0.4em] text-accent-primary opacity-60">{t('tagline')}</span>
+                        </div>
+                    </Link>
+                    <LanguageToggle />
+                </div>
+            </nav>
+        );
+    }
 
     const navLinks = [
         { href: '/dashboard', label: t('dashboard') },
