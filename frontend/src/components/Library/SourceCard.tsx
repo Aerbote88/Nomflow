@@ -30,8 +30,9 @@ export const SourceCard: React.FC<SourceCardProps> = ({
     onBrowse
 }) => {
     const t = useTranslations('sourceCard');
-    const messages = useMessages() as { textDescriptions?: Record<string, string> };
+    const messages = useMessages() as { textDescriptions?: Record<string, string>; textTitles?: Record<string, string> };
     const localizedDescription = messages.textDescriptions?.[title] || description;
+    const localizedTitle = messages.textTitles?.[title] || title;
     const isCurated = author && ['Chunom.org', 'Digitizing Vietnam Team'].includes(author);
     const typeLabel = type === 'text'
         ? (isCurated ? t('typeWordList') : t('typeClassicText'))
@@ -59,7 +60,7 @@ export const SourceCard: React.FC<SourceCardProps> = ({
                     </div>
 
                     <h3 className="text-2xl font-serif text-text-primary mb-1 group-hover:text-accent-primary transition-colors duration-300">
-                        {title}
+                        {localizedTitle}
                     </h3>
 
                     {author && (
