@@ -1171,7 +1171,7 @@ def get_next_study_item(
     
     # Fill from Due Items first
     if due_items:
-        results = _get_content_batch(due_items, session, preferred_text_id=target_text_id, preferred_list_id=target_list_id)
+        results = _get_content_batch(due_items, session, preferred_text_id=text_id, preferred_list_id=list_id)
         print(f"[Study API Debug] Returning {len(results)} due items: {[r['content_id'] for r in results]}")
         for content in results:
             content["is_new"] = False
@@ -1331,7 +1331,7 @@ def get_next_study_item(
             session.commit() # Save all new progress items in one go
             for prog in new_progress_items:
                 session.refresh(prog)  # Ensure DB-assigned IDs are loaded before batch fetch
-            new_contents = _get_content_batch(new_progress_items, session, preferred_text_id=target_text_id, preferred_list_id=target_list_id)
+            new_contents = _get_content_batch(new_progress_items, session, preferred_text_id=text_id or target_text_id, preferred_list_id=list_id or target_list_id)
             for content in new_contents:
                 content["is_new"] = True
                 results.append(content)
@@ -1888,7 +1888,7 @@ def _get_content_batch(progress_items: List[UserProgress], session: Session, inc
     # 1. Fetch User Settings once
     user_id = progress_items[0].user_id
     settings = session.exec(select(UserSettings).where(UserSettings.user_id == user_id)).first()
-    active_text_id = preferred_text_id or (settings.active_text_id if settings else None)
+    active_text_id = preferred_text_id
 
     # 2. Source Resolution for title labeling
     source_title = None

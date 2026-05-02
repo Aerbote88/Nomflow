@@ -441,7 +441,7 @@ function StudyContent() {
                 <StudyHeader
                     mode={mode}
                     progress={progressText}
-                    title={completed ? undefined : currentItem?.source_title}
+                    title={completed || (!textId && !listId) ? undefined : currentItem?.source_title}
                 />
 
                 <div className="w-full max-w-[600px] mt-4 md:mt-8">
