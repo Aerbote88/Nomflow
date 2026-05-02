@@ -213,13 +213,16 @@ function StudyContent() {
                     noMoreRemaining.current = true;
                 }
 
-                // Client-side guard against duplicates already in queue or reviewed in this session
+                // Client-side guard against duplicates already in flight (current
+                // item + queue). Items the user reviewed earlier in the session
+                // that have recycled into a short learning step ARE allowed
+                // through — that's the point of recycling. The backend's
+                // next_review_due check enforces "don't return items not yet
+                // due", so anything that comes back from the API is genuinely
+                // ready for re-review.
                 const currentIds = new Set([currentItemRef.current, ...queueRef.current]
                     .filter(Boolean)
                     .map(i => `${i!.item_type}:${i!.content_id}`));
-                
-                // Also add reviewed items to the client-side exclusion set
-                reviewedInSession.current.forEach(id => currentIds.add(id));
 
                 const uniqueNewItems = newItems.filter(item =>
                     !currentIds.has(`${item.item_type}:${item.content_id}`)
